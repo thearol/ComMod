@@ -1,7 +1,11 @@
+
+# Setting the wd
 setwd(paste(getwd(),"/1_eyetracking",sep = ''))
 
+# Loading data
 df<-read.csv("samples2018_2019.csv")
 
+# Setting the right variable type
 df$RightEye_PositionX<-as.numeric(df$RightEye_PositionX)
 df$RightEye_PositionY<-as.numeric(df$RightEye_PositionY)
 df$RightEye_PupilSize<-as.numeric(df$RightEye_PupilSize)
