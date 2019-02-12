@@ -1,0 +1,49 @@
+---
+title: "CogSci Eye-tracking Workshop 2019 - Day 5"
+author: "Fabio Trecca"
+date: "12/2/2019"
+output:
+  html_document:
+#    theme: paper
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+```
+
+```{r libraries}
+library(tidyverse)
+library(lme4)
+```
+
+## Load data
+
+```{r load data}
+## Set working directory to the relevant one on your computer
+getwd()
+setwd('/Users/au594931/Dropbox/Undervisning/4_FS2019/2019 - Eye tracking/data/Day5')
+
+Fixations <- read_csv('fixations2018_2019.csv')
+Saccades <- read_csv('saccades2018_2019.csv')
+
+# Make sure variables are of the right type
+Fixations <- Fixations %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),
+    Item = as.factor(Item)
+  )
+
+Saccades <- Saccades %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Direction = as.factor(Direction),
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),
+    Item = as.factor(Item)
+  )
+```
