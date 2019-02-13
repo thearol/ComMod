@@ -57,7 +57,7 @@ SaccadesVis<- filter(Saccades, Task== 'VisualSearch_Star' | Task== 'VisualSearch
 FixationsVis$StartTime<-scale(FixationsVis$StartTime)
 SaccadesVis$StartTime<-scale(SaccadesVis$StartTime)
 
-FixModel=glmer(Duration ~ Task + StartTime + (1|ParticipantID) + (1|Item), family = gaussian(link = log), data=FixationsVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+FixModel=glmer(Duration ~ Task + StartTime + (1|ParticipantID)+ (1|Item), family = gaussian(link = log), data=FixationsVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 summary(FixModel)
 
 exp(5.66852)-exp(5.66852-0.11897)
