@@ -1,0 +1,150 @@
+---
+title: "CogSci Eye-tracking Workshop 2019 - Day 5"
+author: "Fabio Trecca"
+date: "12/2/2019"
+output:
+  html_document:
+#    theme: paper
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+```
+
+```{r libraries}
+library(tidyverse)
+library(lme4)
+```
+
+## Load data
+
+```{r load data}
+## Set working directory to the relevant one on your computer
+getwd()
+setwd("C:/Users/Bruger/Desktop/Cognitive Science/R_files/Eye-Tracking/Day5")
+
+Fixations <- read_csv('C:/Users/Bruger/Desktop/Cognitive Science/R_files/Eye-Tracking/Day5/fixations2018_2019.csv')
+Saccades <- read_csv('C:/Users/Bruger/Desktop/Cognitive Science/R_files/Eye-Tracking/Day5/saccades2018_2019.csv')
+
+# Make sure variables are of the right type
+Fixations <- Fixations %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),
+    Item = as.factor(Item)
+  )
+
+Saccades <- Saccades %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Direction = as.character(Direction), #Changed from as.factor to as.character
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),
+    Item = as.factor(Item)
+  )
+```
+Visual Search:
+- VS patterns are affected by task structure and goals (top-down)
+- VS patterns are affected by stimulus structure (bottom-up)
+- Search direction is affected by cultural constraints (e.g., reading
+direction)
+
+. Visual search:
+Search patterns are affected by task structure and goals (top-
+down)
+. Fixations: duration
+. Saccades: N, amplitude
+. Bonus:
+. Searching directions: In Count task, early fixations
+haveMeanPosition < median(Position)
+. P(next jump == long jump)
+```{r}
+VSfix = filter(Fixations, Task == "VisualSearch_Count" | Task == "VisualSearch_Star", Fixation != 1, Duration < 7000)
+VSsacc = filter(Saccades, Task == "VisualSearch_Count" | Task == "VisualSearch_Star", Saccade != 1)
+
+#Note that we are removing the first fixatoin and the first saccade in each dataset, as there was no fixation cross
+
+VSfix$StartTime = scale(VSfix$StartTime)
+VSsacc$StartTime = scale(VSsacc$StartTime)
+
+FixDmodel = glmer(Duration ~ Task + StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+FixDnullmodel1 = glmer(Duration ~ Task + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+FixDnullmodel2 = glmer(Duration ~ StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+FixDnoitem = glmer(Duration ~ Task + StartTime + (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+
+FixAnova = anova(FixDmodel, FixDnullmodel1)
+FixAnova2 = anova(FixDmodel, FixDnullmodel2) #Begge vores fixed effects er significante fra vores nul-modle
+
+FixAnova3 = anova(FixDmodel, FixDnoitem) #Item unders?ger bottom up effekten
+
+
+
+summary(FixDmodel)
+
+#Our interaction models were never significant between Task*StartTime
+
+SaccAmodel = glmer(Amplitude ~ Task + StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccAnullmodel1 = glmer(Amplitude ~ Task +  (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccAnullmodel2 = glmer(Amplitude ~ StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+Saccnoitem = glmer(Amplitude ~ Task + StartTime + (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+summary(SaccAmodel)
+
+SaccAnova = anova(SaccAmodel, SaccAnullmodel1)
+SaccAnova2 = anova(SaccAmodel, SaccAnullmodel2)
+#Both models seem good. The null models tell us that each of our fixed effects are significantly different from the null models. 
+
+SaccAnova3 = anova(SaccAmodel, Saccnoitem)
+SaccAnova3 #Item makes a difference
+
+
+#Now Velocity
+SaccVmodel = glmer(MeanVelocity ~ Task + StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccVnullmodel1 = glmer(MeanVelocity ~ Task + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccVnullmodel2 = glmer(MeanVelocity ~ StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccVnoitem = glmer(MeanVelocity ~ Task + StartTime +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccVAnova = anova(SaccVmodel, SaccVnullmodel1)
+SaccVAnova2 = anova(SaccVmodel, SaccVnullmodel2)
+SaccVAnova3 = anova(SaccVmodel, SaccVnoitem) #Checking the effect of item
+
+summary(SaccVmodel)
+
+#Start time falls in both saccade models, indicating that the saccades are longer and faster in the beginning of each item. 
+
+```
+Inspecting the data
+```{r}
+ggplot(VSsacc, aes(x = Amplitude, color = Task)) + geom_density()
+ggplot(VSsacc, aes(x = MeanVelocity, color = Task)) + geom_density()
+ggplot(VSfix, aes (x = Duration, color = Task)) + geom_density()
+
+
+
+quantile(VSsacc$Amplitude, na.rm = TRUE) #75% = 4.69
+
+
+
+```
+
+Reading direction hypothesis. More read from left to right, and its determined by culture.
+```{r}
+filter(VSsacc, Task == "VisualSearch_Count") %>% count(Direction)
+
+
+```
+
