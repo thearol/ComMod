@@ -1,7 +1,7 @@
 ---
 title: "CogSci Eye-tracking Workshop 2019 - Day 5"
-author: "Fabio Trecca"
-date: "12/2/2019"
+author: "Laurits, Oscar & Simon"
+date: "18/2/2019"
 output:
   html_document:
 #    theme: paper
@@ -16,15 +16,14 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align =
 library(tidyverse)
 library(lmerTest)
 library(ggplot2)
-library(effects)
 ```
 
 ## Load data
 
 ```{r load data}
 ## Set working directory to the relevant one on your computer
-getwd()
-setwd()
+#getwd()
+#setwd()
 
 Fixations <- read_csv('fixations2018_2019.csv')
 Saccades <- read_csv('saccades2018_2019.csv')
@@ -50,62 +49,148 @@ Saccades <- Saccades %>%
   )
 ```
 
-```{r load data, Visual Search}
-FixationsVis<- filter(Fixations, Task== 'VisualSearch_Star' | Task== 'VisualSearch_Count')
-SaccadesVis<- filter(Saccades, Task== 'VisualSearch_Star' | Task== 'VisualSearch_Count')
+Visual Search:
+- VS patterns are affected by task structure and goals (top-down)
+- VS patterns are affected by stimulus structure (bottom-up)
+- Search direction is affected by cultural constraints (e.g., reading
+direction)
 
-FixationsVis$StartTime<-scale(FixationsVis$StartTime)
-SaccadesVis$StartTime<-scale(SaccadesVis$StartTime)
+. Visual search:
+Search patterns are affected by task structure and goals (top-
+down)
+. Fixations: duration
+. Saccades: N, amplitude
+. Bonus:
+. Searching directions: In Count task, early fixations
+haveMeanPosition < median(Position)
+. P(next jump == long jump)
+```{r Visual Search}
+VSfix = filter(Fixations, Task == "VisualSearch_Count" | Task == "VisualSearch_Star", Fixation != 1, Duration < 7000) # removing the early fixations since there was not fixation cross
+VSsacc = filter(Saccades, Task == "VisualSearch_Count" | Task == "VisualSearch_Star", Saccade != 1)
 
-FixModel=glmer(Duration ~ Task + StartTime + (1|ParticipantID)+ (1|Item), family = gaussian(link = log), data=FixationsVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(FixModel)
+#Note that we are removing the first fixation and the first saccade in each dataset, as there was no fixation cross
 
-exp(5.66852)-exp(5.66852-0.11897)
+# Resacling time data
+VSfix$StartTime = scale(VSfix$StartTime)
+VSsacc$StartTime = scale(VSsacc$StartTime)
 
-MuMIn::r.squaredGLMM(FixModel)
+# Durration of fixations model
+FixDmodel = glmer(Duration ~ Task + StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
-ggplot(FixationsVis, aes(x=Task, y=Duration, color=Task)) + 
+FixDmodelint = glmer(Duration ~ Task * StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+FixDnullmodel1 = glmer(Duration ~ Task + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+FixDnullmodel2 = glmer(Duration ~ StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+FixDnoitem = glmer(Duration ~ Task + StartTime + (1|ParticipantID), family = gaussian(link=log), data = VSfix, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+# Note our interaction models were never significant between Task*StartTime
+
+# Runing anova
+FixAnova = anova(FixDmodel, FixDnullmodel1)
+FixAnova2 = anova(FixDmodel, FixDnullmodel2) #Begge vores fixed effects er significante fra vores nul-modle
+
+FixAnova3 = anova(FixDmodel, FixDnoitem) #Item unders?ger bottom up effekten
+
+# Getting model stats
+summary(FixDmodel)
+summary(FixDmodelint)
+
+exp(FixDmodel@beta[1]+FixDmodel@beta[2])-exp(FixDmodel@beta[1])
+
+MuMIn::r.squaredGLMM(FixDmodel)
+
+# Plot for distributions
+ggplot(VSfix, aes(x=Task, y=Duration, color=Task)) + 
   geom_violin() +
   ylim(0, 5000) +
   labs(title ='Distribution of Duration of Fixations Acording to Task')
 
-AmpModel=glmer(Amplitude ~ Task + StartTime + (1|ParticipantID) + (1|Item), family = gaussian(link = log), data=SaccadesVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(AmpModel)
 
-exp(1.01524)-exp(1.01524+0.37252)
+# Amplitude of saccades model
+SaccAmodel = glmer(Amplitude ~ Task + StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
-MuMIn::r.squaredGLMM(AmpModel)
+SaccAmodelint = glmer(Amplitude ~ Task * StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
-ggplot(SaccadesVis, aes(x=Task, y=Amplitude, color=Task)) + 
+SaccAnullmodel1 = glmer(Amplitude ~ Task +  (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccAnullmodel2 = glmer(Amplitude ~ StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+Saccnoitem = glmer(Amplitude ~ Task + StartTime + (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+# Runing anova
+SaccAnova = anova(SaccAmodel, SaccAnullmodel1)
+SaccAnova2 = anova(SaccAmodel, SaccAnullmodel2)
+#Both models seem good. The null models tell us that each of our fixed effects are significantly different from the null models. 
+
+SaccAnova3 = anova(SaccAmodel, Saccnoitem)
+SaccAnova3 #Item makes a difference
+
+# Getting model stats
+summary(SaccAmodel)
+summary(SaccAmodelint)
+
+exp(SaccAmodel@beta[1]+SaccAmodel@beta[2])-exp(SaccAmodel@beta[1])
+
+MuMIn::r.squaredGLMM(SaccAmodel)
+
+# Plot for distributions
+ggplot(VSsacc, aes(x=Task, y=Amplitude, color=Task)) + 
   geom_violin() +
   #ylim(0, 5000) +
   labs(title ='Distribution of Amplitude of Saccades Acording to Task')
 
-VelModel=glmer(MeanVelocity ~ Task + StartTime + (1|ParticipantID) + (1|Item), family = gaussian(link = log), data=SaccadesVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
-summary(VelModel)
+# Velocity of saccades model
+SaccVmodel = glmer(MeanVelocity ~ Task + StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
-exp(4.36771)-exp(4.36771+0.23978)
+SaccVmodelint = glmer(MeanVelocity ~ Task * StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
-MuMIn::r.squaredGLMM(VelModel)
+SaccVnullmodel1 = glmer(MeanVelocity ~ Task + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
 
-ggplot(SaccadesVis, aes(x=Task, y=MeanVelocity, color=Task)) + 
+SaccVnullmodel2 = glmer(MeanVelocity ~ StartTime + (1|Item) +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+SaccVnoitem = glmer(MeanVelocity ~ Task + StartTime +  (1|ParticipantID), family = gaussian(link=log), data = VSsacc, control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+
+# Runing anova
+SaccVAnova = anova(SaccVmodel, SaccVnullmodel1)
+SaccVAnova2 = anova(SaccVmodel, SaccVnullmodel2)
+SaccVAnova3 = anova(SaccVmodel, SaccVnoitem) #Checking the effect of item
+
+# Getting model stats
+summary(SaccVmodel)
+summary(SaccVmodelint)
+
+exp(SaccVmodel@beta[1]+SaccVmodel@beta[2])-exp(SaccVmodel@beta[1])
+
+MuMIn::r.squaredGLMM(SaccVmodel)
+
+# Plot for distributions
+ggplot(VSsacc, aes(x=Task, y=MeanVelocity, color=Task)) + 
   geom_violin() +
   #ylim(0, 5000) +
   labs(title = 'Distribution of Mean Velocity of Fixations Acording to Task')
 
-ggplot(ha, aes(Amplitude,color=Task)) + geom_density()
-
-ha<-filter(Saccades, Task== 'VisualSearch_Star')
-quantile(ha$Amplitude,na.rm = T)
-
-
-ha<-filter(Saccades, Task== 'VisualSearch_Count')
-quantile(ha$Amplitude,na.rm = T)
-
+#Start time falls in both saccade models, indicating that the saccades are longer and faster in the beginning of each item. 
 
 ```
 
-```{r load data, Social Engagement}
+Model selection:
+Model selecting was the same in all three models. With independent variable being either, duration of fixation, amplitude of saccades or mean velocity of saccades We started with a full model including task and start time of trial as dependent variables and with an interaction. And with random slopes and intercepts by picture and participant for task and start time. 
+We then removed feature that made the model hard to converge, tell we end with a model that was: Independent variable being either, duration of fixation, amplitude of saccades or mean velocity of saccades. Task and start time of trial as dependent variables with NO interaction. And with random intercepts by picture and participant. 
+Interactions were drop since they proved to be non-significant, for the duration model (beta=-0.01, SE=0.02, t(9277)=-0.71, p > 0.05), for the amplitude model (beta=-0.01, SE=0.03, t(9182)=-0.29, p > 0.05) and for the mean velocity model (beta=-0.002, SE=0.02, t(9182)=-0.14, p > 0.05).
+
+Results:
+The models were then tested using a likelihood ratio test via anova to obtain p-values.
+
+For duration of fixation task was a sigificant predictor (beta=-0.13, SE=0.02, t(9278)=-7.546, p < 0.001), the same was true for start time (beta=-0.01, SE=0.01, t(9278)=9.484, p < 0.001). The effect of task was an decrease in duration of fixations when going from counting to star search of 35.49 ms. However the effects of task and start time accounts for little of the overall variation, with an r squared marginal of 1.92e-07.
+
+For amplitude of saccades task was a sigificant predictor (beta=0.38, SE=0.02, t(9183)=15.780, p < 0.001), the same was true for start time (beta=0.01, SE=0.01, t(9183)=-7.613, p < 0.001). The effect of task was an increase in amplitude of saccades when going from counting to star search of 1.26 degrees. However the effects of task and start time accounts for little of the overall variation, with an r squared marginal of 2.85e-03.
+
+For mean velocity of saccades task was a sigificant predictor (beta=0.24, SE=0.01, t(9183)=19.39, p < 0.001), the same was true for start time (beta=-0.05, SE=0.01, t(9183)=-8, p < 0.001). The effect of task was an increase in mean velocity of saccades when going from counting to star search of 21.62 degrees/s. However the effects of task and start time accounts for little of the overall variation, with an r squared marginal of 5.63e-06.
+
+
+```{r Social Engagement}
+# This section is not relevant for the visual search task which has been the focus of this Rmarkdown
 Con<-read_csv('logfilesSE.csv')
 FixationsSoc<- filter(Fixations, Task== 'SocialEngagement')
 FixationsSoc<-merge(Con,FixationsSoc)
@@ -128,10 +213,4 @@ for (i in (1:nrow(FixationsSoc))){
 }
 
 
-```
-
-```{r load data}
-```
-
-```{r load data}
 ```
