@@ -168,7 +168,7 @@ MuMIn::r.squaredGLMM(SaccVmodel)
 ggplot(VSsacc, aes(x=Task, y=MeanVelocity, color=Task)) + 
   geom_violin() +
   #ylim(0, 5000) +
-  labs(title = 'Distribution of Mean Velocity of Fixations Acording to Task')
+  labs(title = 'Distribution of Mean Velocity of Saccades Acording to Task')
 
 #Start time falls in both saccade models, indicating that the saccades are longer and faster in the beginning of each item. 
 

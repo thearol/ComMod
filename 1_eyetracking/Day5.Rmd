@@ -14,7 +14,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align =
 
 ```{r libraries}
 library(tidyverse)
-library(lme4)
+library(lmerTest)
+library(ggplot2)
+library(effects)
 ```
 
 ## Load data
@@ -22,7 +24,7 @@ library(lme4)
 ```{r load data}
 ## Set working directory to the relevant one on your computer
 getwd()
-setwd('/Users/au594931/Dropbox/Undervisning/4_FS2019/2019 - Eye tracking/data/Day5')
+setwd()
 
 Fixations <- read_csv('fixations2018_2019.csv')
 Saccades <- read_csv('saccades2018_2019.csv')
@@ -46,4 +48,90 @@ Saccades <- Saccades %>%
     ParticipantGender = as.factor(ParticipantGender),
     Item = as.factor(Item)
   )
+```
+
+```{r load data, Visual Search}
+FixationsVis<- filter(Fixations, Task== 'VisualSearch_Star' | Task== 'VisualSearch_Count')
+SaccadesVis<- filter(Saccades, Task== 'VisualSearch_Star' | Task== 'VisualSearch_Count')
+
+FixationsVis$StartTime<-scale(FixationsVis$StartTime)
+SaccadesVis$StartTime<-scale(SaccadesVis$StartTime)
+
+FixModel=glmer(Duration ~ Task + StartTime + (1|ParticipantID) + (1|Item), family = gaussian(link = log), data=FixationsVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(FixModel)
+
+exp(5.66852)-exp(5.66852-0.11897)
+
+MuMIn::r.squaredGLMM(FixModel)
+
+ggplot(FixationsVis, aes(x=Task, y=Duration, color=Task)) + 
+  geom_violin() +
+  ylim(0, 5000) +
+  labs(title ='Distribution of Duration of Fixations Acording to Task')
+
+AmpModel=glmer(Amplitude ~ Task + StartTime + (1|ParticipantID) + (1|Item), family = gaussian(link = log), data=SaccadesVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(AmpModel)
+
+exp(1.01524)-exp(1.01524+0.37252)
+
+MuMIn::r.squaredGLMM(AmpModel)
+
+ggplot(SaccadesVis, aes(x=Task, y=Amplitude, color=Task)) + 
+  geom_violin() +
+  #ylim(0, 5000) +
+  labs(title ='Distribution of Amplitude of Saccades Acording to Task')
+
+VelModel=glmer(MeanVelocity ~ Task + StartTime + (1|ParticipantID) + (1|Item), family = gaussian(link = log), data=SaccadesVis,control=glmerControl(optimizer="bobyqa", optCtrl=list(maxfun=2e5)))
+summary(VelModel)
+
+exp(4.36771)-exp(4.36771+0.23978)
+
+MuMIn::r.squaredGLMM(VelModel)
+
+ggplot(SaccadesVis, aes(x=Task, y=MeanVelocity, color=Task)) + 
+  geom_violin() +
+  #ylim(0, 5000) +
+  labs(title = 'Distribution of Mean Velocity of Fixations Acording to Task')
+
+ggplot(ha, aes(Amplitude,color=Task)) + geom_density()
+
+ha<-filter(Saccades, Task== 'VisualSearch_Star')
+quantile(ha$Amplitude,na.rm = T)
+
+
+ha<-filter(Saccades, Task== 'VisualSearch_Count')
+quantile(ha$Amplitude,na.rm = T)
+
+
+```
+
+```{r load data, Social Engagement}
+Con<-read_csv('logfilesSE.csv')
+FixationsSoc<- filter(Fixations, Task== 'SocialEngagement')
+FixationsSoc<-merge(Con,FixationsSoc)
+FixationsSoc<-filter(FixationsSoc,Year== '2018')
+
+FixationsSoc$Ost<-0
+FixationsSoc$Dir<-0
+FixationsSoc$Gen<-0
+
+for (i in (1:nrow(FixationsSoc))){
+  if (grepl('f', FixationsSoc[i,4])== T){
+    FixationsSoc[i,17]=1
+  }
+  if (grepl('[+]', FixationsSoc[i,4])==T){
+    FixationsSoc[i,16]=1
+  }
+  if (grepl('dir', FixationsSoc[i,4])==T){
+    FixationsSoc[i,18]=1
+  }
+}
+
+
+```
+
+```{r load data}
+```
+
+```{r load data}
 ```
