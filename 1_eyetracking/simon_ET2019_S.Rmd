@@ -1,0 +1,499 @@
+---
+title: "CogSci Eye-tracking Workshop 2019 - Day 4"
+author: "Fabio Trecca"
+date: "11/2/2019"
+output:
+  html_document:
+#    theme: paper
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+```
+
+```{r libraries}
+library(tidyverse)
+```
+
+## Load data
+
+```{r load data}
+# Setting the wd
+setwd(paste(getwd(),"/1_eyetracking",sep = ''))
+
+Samples <- read_csv('samples2018_2019.csv')
+
+# Make sure variables are of the right type
+Samples <- Samples %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Trial = as.factor(Trial),
+    DominantEye = ifelse(is.na(RightEye_PositionX), 'Left', 'Right'),
+    RightEye_PositionX = as.numeric(RightEye_PositionX),
+    RightEye_PositionY = as.numeric(RightEye_PositionY),
+    RightEye_PupilSize = as.numeric(RightEye_PupilSize),
+    RightEye_MeanVelocityX = as.numeric(RightEye_MeanVelocityX),
+    RightEye_MeanVelocityY = as.numeric(RightEye_MeanVelocityY),
+    RightEye_MeanAccellerationX = as.numeric(RightEye_MeanAccellerationX),
+    RightEye_MeanAccellerationY = as.numeric(RightEye_MeanAccellerationY),
+    LeftEye_PositionX = as.numeric(LeftEye_PositionX),
+    LeftEye_PositionY = as.numeric(LeftEye_PositionY),
+    LeftEye_PupilSize = as.numeric(LeftEye_PupilSize),
+    LeftEye_MeanVelocityX = as.numeric(LeftEye_MeanVelocityX),
+    LeftEye_MeanVelocityY = as.numeric(LeftEye_MeanVelocityY),
+    LeftEye_MeanAccellerationX = as.numeric(LeftEye_MeanAccellerationX),
+    LeftEye_MeanAccellerationY = as.numeric(LeftEye_MeanAccellerationY),
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),     
+    SearchOrder = as.factor(SearchOrder),
+    TrialTime = as.numeric(TrialTime*0.001),
+    TotTrialLengthInSeconds = as.numeric(TotTrialLengthInSeconds)
+  )
+```
+
+For some people the right eye was tracked, for some other the left eye. Let's restructure the dataset accordingly
+
+```{r cleaning}
+Samples <- Samples %>%
+  mutate(
+    PositionX = ifelse(DominantEye == 'Right', RightEye_PositionX, LeftEye_PositionX),
+    PositionY = ifelse(DominantEye == 'Right', RightEye_PositionY, LeftEye_PositionY),
+    PupilSize = ifelse(DominantEye == 'Right', RightEye_PupilSize, LeftEye_PupilSize),
+    MeanVelocityX = ifelse(DominantEye == 'Right', RightEye_MeanVelocityX, LeftEye_MeanVelocityX),
+    MeanVelocityY = ifelse(DominantEye == 'Right', RightEye_MeanVelocityY, LeftEye_MeanVelocityY),
+    MeanAccellerationX = ifelse(DominantEye == 'Right', RightEye_MeanAccellerationX, LeftEye_MeanAccellerationX),
+    MeanAccellerationY = ifelse(DominantEye == 'Right', RightEye_MeanAccellerationY, LeftEye_MeanAccellerationY)
+  ) %>% 
+  select(-c(RightEye_PositionX, RightEye_PositionY, RightEye_PupilSize, RightEye_MeanVelocityX, RightEye_MeanVelocityY, RightEye_MeanAccellerationX, RightEye_MeanAccellerationY, LeftEye_PositionX, LeftEye_PositionY, LeftEye_PupilSize, LeftEye_MeanVelocityX, LeftEye_MeanVelocityY, LeftEye_MeanAccellerationX, LeftEye_MeanAccellerationY))
+```
+
+## Plotting the raw data
+
+We can start by plotting the raw data _for one participant_ using ggplot() with PositionX on the x-axis and PositionY on the y-axis. This is a good diagnostic tool to start with before we go on to estimating events (fixations and saccades). The plot is not very useful per se, mostly because it lack a temporal dimension. We can add temporal data to it using TrialTime as color in the aesthetics: 
+
+```{r raw x/y data}
+x = subset(Samples, ParticipantID == '2019-2019-5_1_f2')  # 2019-2019-2_2_f22
+ggplot(x, aes(x = PositionX, y = PositionY, color = TrialTime)) +
+  geom_point(size = 0.3) +
+  ## the following lines are for aesthetic purposes only
+  ggtitle(paste('Sample data, subject:', x$ParticipantID, ', task:', x$Task )) +
+  xlab(paste('Position X (', x$DominantEye, ')', sep = '')) +
+  ylab(paste('Position Y (', x$DominantEye, ')', sep = '')) +
+  xlim(0,1500) + ylim(0,1250) +
+  facet_wrap(~Trial, ncol = 4) +
+  theme_bw()
+```
+
+## Estimating events from sample data
+
+However, as we discussed, the most important first step in analyzing eye-tracking data is to estimate events such as fixations and saccades. The following chunk makes a quick and dirty event estimation using a simple Maximum Allowed Velocity algorithm with a cut-off point of velocity =< 20˚/s. For each line, the script calculates whether velocity is above or below the threshold. This gives us a very rough idea of which lines are in a fixation, and which are in a saccade. To make estimation slightly less rough, we can use a rolling window of 200 ms to compute the "probability" of each data point to be in a fixation or a saccade. We can then choose a threshold of probability (e.g., >= .90) in order for something to be considered a fixation or a saccade.
+
+```{r estimate events}
+Samples2 <- Samples %>% 
+  group_by(ParticipantID, Trial) %>%
+  ## if velocity is < 20 degrees/sec, the eye is "not moving"
+  mutate(
+    LowVelocity = ifelse(
+      as.numeric(MeanVelocityX)>-20 &
+      as.numeric(MeanVelocityX)<20, 1, 0)
+  ) %>%
+  mutate(LowVelocity = coalesce(LowVelocity, 0)) %>%
+  
+  ## create rolling window for averaging
+  mutate(Event = (cumsum(LowVelocity) - lag(cumsum(LowVelocity), n = 5))/5) %>%
+  
+  ## the next lines are very hacky
+  ## if average is > .9, count as fixation
+  mutate(FixationNum = ifelse(Event >= 0.9, 1, 0),
+         .count = ifelse(c(0, diff(FixationNum)) == 1, 1, 0),
+         .count = coalesce(.count, 0),
+         .groups = cumsum(.count),
+         FixationNum = ifelse(FixationNum == 1, .groups, NA)) %>%
+  select(-c(.count, .groups)) %>% 
+  
+  ## otherwise count as saccade
+  mutate(SaccadeNum = ifelse(Event < 0.9, 1, 0),
+         .count = ifelse(c(0, diff(SaccadeNum)) == 1, 1, 0),
+         .count = coalesce(.count, 0),
+         .groups = cumsum(.count),
+         SaccadeNum = ifelse(SaccadeNum == 1, .groups, NA)) %>%
+  select(-c(.count, .groups)) %>% 
+  mutate(Event = ifelse(Event >= 0.9, 'Fixation', 'Saccade'))
+```
+
+After having estimated oculomotor events, we can make more interesting analyses and plots. Here, for instance, we can update the x/y plot from above with the addition of information about events: which data points are in a fixation, and which are in a saccade?
+
+```{r raw x/y data plus events}
+ggplot(subset(Samples2, ParticipantID == '2019-2019-5_1_f2' & Trial == 1 & !is.na(Event)),
+       aes(x = PositionX, y = PositionY, color = Event)) +
+  geom_point(size = 0.3) +
+  ## the following lines are for aesthetic purposes only 
+  scale_color_manual(values = c('#6291D6', '#F0B952'), name = 'Event') +
+  guides(colour = guide_legend(override.aes = list(size=3))) +
+  ggtitle(paste('Sample data with event estimation, trial', x$Trial)) +
+  xlab(paste('Position X (', x$DominantEye, ')', sep = '')) +
+  ylab(paste('Position Y (', x$DominantEye, ')', sep = '')) +
+  xlim(0,1500) + ylim(0,1250) +
+  theme_bw()
+
+ggplot(subset(Samples2, ParticipantID == '2019-2019-5_1_f2' & !is.na(Event)),
+       aes(x = PositionX, y = PositionY, color = Event)) +
+  geom_point(size = 0.3) +
+  ## the following lines are for aesthetic purposes only 
+  scale_color_manual(values = c('#6291D6', '#F0B952'), name = 'Event') +
+  guides(colour = guide_legend(override.aes = list(size=3))) +
+  ggtitle('Sample data with event estimation, all trials') +
+  xlab(paste('Position X (', x$DominantEye, ')', sep = '')) +
+  ylab(paste('Position Y (', x$DominantEye, ')', sep = '')) +
+  xlim(0,1500) + ylim(0,1250) +
+  facet_wrap(~Trial, ncol = 4) +
+  theme_bw()
+```
+
+If we are interested in the temporal dimension, we can make a time sequence plot, in which we plot Time on the x-axis and location of fixations and saccades on the y-axis. This plots gives us a better idea of the succession of fixations and saccades as they unfold across time.
+
+```{r time sequence plot}
+ggplot(subset(Samples2, ParticipantID == '2019-2019-5_1_f2' & Trial == 4 & !is.na(Event)),
+       aes(x = TrialTime, y = PositionX, color = Event)) +
+  geom_point(size = 0.5) +
+  ## the following lines are for aesthetic purposes only 
+  scale_color_manual(values = c('#6291D6', '#F0B952'), name = 'Event') +
+  guides(colour = guide_legend(override.aes = list(size=3))) +
+  ggtitle(paste('Time sequence plot, trial', x$Trial)) +
+  xlab('Time (s)') + ylab(paste('Position Y (', x$DominantEye, ')', sep = '')) +
+  theme_bw()
+
+ggplot(subset(Samples2, ParticipantID == '2019-2019-5_1_f2' & !is.na(Event)),
+       aes(x = TrialTime, y = PositionX, color = Event)) +
+  geom_point(size = 0.5) +
+  ## the following lines are for aesthetic purposes only 
+  scale_color_manual(values = c('#6291D6', '#F0B952'), name = 'Event') +
+  guides(colour = guide_legend(override.aes = list(size=3))) +
+  ggtitle('Time sequence plot, all trials') +
+  xlab('Time (s)') + ylab(paste('Position Y (', x$DominantEye, ')', sep = '')) +
+  facet_wrap(~Trial, ncol = 4) +
+  theme_bw()
+```
+
+### Exercise 1
+Play around with (1) velocity cut-off, (2) probability threshold, and (3) size of sliding average window in the chunk above, and see how the two plots below change. Do we observe any interesting patterns?
+
+### Exercise 2
+Count the average number of events estimated by our algorithm (1) by participant per trial, and (2) by task
+
+```{r exercise 2}
+
+```
+
+Great! Now let's summarize the information about event estimation in the Samples dataset into a new dataset called "Fixation". In the new dataset, each line will represent a different fixation for each participant in each trial. For each line, we will report average x and y coordinates for the fixation as well as start time, end time, and duration (= end time - start time).
+
+```{r make summary dataset with event estimation}
+Fixations <- Samples2 %>% 
+  group_by(ParticipantID, Trial, FixationNum) %>% 
+  summarize(
+    Task = Task[1],
+    ParticipantGender = ParticipantGender[1],
+    SearchOrder = SearchOrder[1],
+    StartTime = min(TrialTime),
+    EndTime = max(TrialTime),
+    Duration = max(TrialTime)-min(TrialTime),
+    PositionX = median(PositionX),
+    PositionY = median(PositionY)
+  ) %>% 
+  filter(!is.na(FixationNum))
+
+## Our estimation of fixations and saccades works fine, but in order to get more accurate estimates we
+## may want to load the Fixation and Saccade Reports generated by the EyeLink DataViewer software:
+#Fixations <- read_delim('fixations2018_2019.csv', ';')
+#Saccades <- read_csv('saccades2018_2019.csv')
+#head(Fixations)
+#head(Saccades)
+```
+
+Let's add data about conditions in the Visual Search and Social Engagement experiments. We will use this information in our data analysis.
+
+```{r add condition data}
+ConditionsVisualSearch <- read_delim('ForagingOrder.csv', ';')
+
+Fixations <- merge(Fixations, ConditionsVisualSearch, by = c('SearchOrder', 'Trial'), all = TRUE)
+```
+
+### Sanity Checks
+
+Before starting the data analysis proper, let's have a look at how the different events are distributed. As we'll see more in depth tomorrow, it's a good idea to start by doing this as a sort of 'sanity check'.
+
+So far we have two datasets — Samples and Fixations — but we still need a Saccades dataset. Let's make one now:
+
+```{r make saccades dataset}
+Saccades <- Samples2 %>% 
+  group_by(ParticipantID, Trial, SaccadeNum) %>% 
+  summarize(
+    Task = Task[1],
+    ParticipantGender = ParticipantGender[1],
+    SearchOrder = SearchOrder[1],
+    StartTime = min(TrialTime),
+    EndTime = max(TrialTime),
+    Duration = max(TrialTime)-min(TrialTime),
+    PositionXStart = min(PositionX),
+    PositionXEnd = max(PositionX),
+    AmplitudeX = max(PositionX)-min(PositionX),
+    MeanVelocityX = median(MeanVelocityX),
+    MeanAccellerationX = median(MeanAccellerationX),
+    PositionYStart = min(PositionY),
+    PositionYEnd = max(PositionY),
+    AmplitudeY = max(PositionY)-min(PositionY),
+    MeanVelocityY = median(MeanVelocityY),
+    MeanAccellerationY = median(MeanAccellerationY)
+  ) %>% 
+  filter(!is.na(SaccadeNum))
+```
+
+Let's plot the most interesting variables using either hist() or ggplot():
+
+```{r distributions}
+## Check distribution of fixations
+hist(Fixations$Duration) #lognormal
+ggplot(Fixations, aes(Duration, color=Task)) + geom_density()
+
+hist(Fixations$PositionX) #normal
+ggplot(Fixations, aes(PositionX,color=Task)) + geom_density()
+
+hist(Fixations$PositionY) #normal
+ggplot(Fixations, aes(PositionY,color=Task)) + geom_density()
+
+## Check distribution of saccades
+hist(Saccades$AmplitudeX) #lognormal
+ggplot(Saccades, aes(AmplitudeX,color=Task)) + geom_density()
+
+hist(Saccades$MeanVelocityX) #normal
+ggplot(Saccades, aes(MeanVelocityX,color=Task)) + geom_density()
+
+hist(Saccades$MeanAccellerationX) #normal
+ggplot(Saccades, aes(MeanAccellerationX,color=Task)) + geom_density()
+
+## Check distribution of pupil size 
+hist(Samples2$PupilSize) #bimodal
+ggplot(Samples2, aes(PupilSize,color=ParticipantID)) + geom_density()
+#hist(SamplesV2$PupilSize[SamplesV2$Task=='SocialEngagement']) #bimodal
+```
+
+## Data representations
+
+### Scanpaths
+
+Now that we have estimate events in our sample data and checked that everything is in order, we can begin looking closer at the data and making some "representations" of the data. We can easily generate different representations of the estimated oculomotor events by simply plotting the data with ggplot(). For instance, we can easily make a scanpath by plotting fixations:
+
+```{r scanpath}
+library(ggrepel)
+
+x = subset(Fixations, ParticipantID ==	'2019-2019-4_2_m12' & Item == 'sheep.jpg')
+ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  geom_path(alpha = .6, color = '#F0B952') +
+  geom_point(size = x$Duration*20, alpha = .6, color = '#6291D6', stroke = 1, shape = 21) +
+  ggrepel::geom_text_repel(aes(label = FixationNum), size = 3, color = 'black') +
+  # facet_wrap(~Trial) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Scanpath for visual search task') +
+  theme_bw() + theme(legend.position = 'none')
+```
+
+We can also easily underlay the original stimulus picture:
+
+```{r scanpath with image}
+library(jpeg)
+
+img <- jpeg::readJPEG('Pics/VisualSearch/sheep.jpg')
+img <- grid::rasterGrob(img, interpolate=TRUE)
+
+ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  geom_rect(xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf, fill = 'white', alpha = .02) +
+  geom_path(alpha = .6, color = 'red') +
+  geom_point(size = x$Duration*20,  color = '#6291D6', stroke = 1, shape = 21) +
+  ggrepel::geom_text_repel(aes(label = FixationNum), size = 3, color = 'blue') +
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Scanpath for visual search task') +
+  theme_bw() + theme(legend.position = 'none')
+```
+
+We can even make the scanpath come to life using the gganimate package. If you don't have it on your computer, run install.packages("gganimate") and install.packages("gifski"):
+
+```{r animate scanpath with image}
+library(gganimate)
+library(gifski)
+library(png)
+
+ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+ annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+ geom_point(size = x$Duration*20,  color = '#6291D6', fill = 'white', stroke = 3, shape = 21) +
+ xlim(0,1920) + ylim(0,1080) +
+ ggtitle('Scanpath for visual search task') +
+ theme_bw() + theme(legend.position = 'none') +
+ gganimate::transition_time(FixationNum) +
+ gganimate::ease_aes('linear') +
+ gganimate::shadow_wake(wake_length = 0.6)
+```
+
+#### Exercise 3
+Using a for-loop, make a scanpath for each participant in the Visual Search experiment. Use facets to plot the 10 trials separately for each participant. Use these plots as diagnostic tools in order to answer the following questions:
+
+1) Do the data look reasonable and of good quality? Do we have any issues?
+2) Can we differentiate between the two conditions (Visual Foraging and Counting) only by looking at the scanpaths?
+3) Can we spot the trials in which the participants found the star?
+
+```{r scanpath exercise}
+Fixations2<-filter(Fixations,Task=='VisualSearch')
+
+for(i in unique(Fixations$ParticipantID)){
+  x = subset(Fixations2, ParticipantID ==	i)
+  plot<-ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  geom_path(alpha = .6, color = '#F0B952') +
+  geom_point(size = x$Duration*7, alpha = .6, color = '#6291D6', stroke = 1, shape = 21) +
+  #ggrepel::geom_text_repel(aes(label = FixationNum), size = 3, color = 'black') +
+  facet_wrap(~Item.y) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle(paste('Scanpath for visual search task',i)) +
+  theme_bw() + theme(legend.position = 'none')
+  print(plot)
+}
+  
+warnings()
+
+x = subset(Fixations, ParticipantID ==	'2019-2019-4_2_m12')
+  ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  geom_path(alpha = .6, color = '#F0B952') +
+  geom_point(size = x$Duration*20, alpha = .6, color = '#6291D6', stroke = 1, shape = 21) +
+  #ggrepel::geom_text_repel(aes(label = FixationNum), size = 3, color = 'black') +
+  facet_wrap(~Item) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Scanpath for visual search task') +
+  theme_bw() + theme(legend.position = 'none')
+
+  
+```
+
+### Heatmaps
+
+Heatmaps can be created in a similar fashion to scanpaths using the function geom_density_2d (which performs a 2D kernel density estimation and display the results as contours of different colors).
+
+```{r heatmap}
+## these colors work well for heatmaps (see https://gist.github.com/kalebr/6832380)
+jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF",
+                                 "cyan", "#7FFF7F", "yellow", "#FF7F00", "red", "#7F0000"))
+
+z = subset(Fixations, ParticipantID ==	'2019-2019-4_2_m12' & Item == 'space_capsules.jpg')
+ggplot(z, aes(x = PositionX, y = 1081-PositionY)) +
+  stat_density2d(geom="raster", aes(fill=..density.., alpha=sqrt(sqrt(..density..))),
+                 contour=FALSE, n=1000) + 
+  scale_alpha(range = c(0.1, 0.6)) +
+  scale_fill_gradientn(colours = jet.colors(10), trans="sqrt") +
+  # facet_wrap(~Trial) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Heatmap for visual search task') +
+  theme_bw() + theme(legend.position = 'none')
+```
+
+Stimulus images can be underlayed here too:
+
+```{r heatmap with image}
+img <- jpeg::readJPEG('Pics/VisualSearch/space_capsules.jpg')
+img <- grid::rasterGrob(img, interpolate=TRUE)
+
+ggplot(z, aes(x = PositionX, y = 1081-PositionY)) +
+  annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  stat_density2d(geom="raster", aes(fill=..density.., alpha=sqrt(sqrt(..density..))),
+                 contour=FALSE, n=1000) + 
+  scale_alpha(range = c(0.1, 0.6)) +
+  scale_fill_gradientn(colours = jet.colors(10), trans="sqrt") +
+  # facet_wrap(~Trial) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Heatmap for visual search task') +
+  theme_bw() + theme(legend.position = 'none')
+```
+
+#### Exercise 4
+
+As in Exercise 3 with scanpahts, make a heatmap for each participant in the Visual Search experiment (use picture eggs.jpg). Use facets to plot the 10 trials separately for each participant. Use these plots as diagnostic tools in order to answer the following questions:
+
+1) Do the data look reasonable and of good quality? Do we have any issues?
+2) Can we differentiate between the two conditions (Visual Foraging and Counting) only by looking at the scanpaths?
+3) Can we spot the trials in which the participants found the star?
+
+```{r heatmap exercise}
+
+```
+
+### Area of interest
+
+```{r AOI}
+img <- jpeg::readJPEG('Pics/VisualSearch/sheep.jpg')
+img <- grid::rasterGrob(img, interpolate=TRUE)
+
+## Define vertices of AOI
+AOI = c(200, 600, 300, 600)
+
+## Check whether Fixations are within AOI
+Fixations <- Fixations %>%
+  mutate(
+    FixationInAOI = ifelse(PositionX > 200 &
+                             PositionX < 600 &
+                             PositionY > 300 &
+                             PositionY < 600, TRUE, FALSE)
+  )
+
+x = subset(Fixations, FixationInAOI == TRUE & Task == 'VisualSearch' & Trial == 1)
+ggplot(x, aes(x = PositionX, y = PositionY, color = ParticipantID, size = Duration)) +
+  annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  geom_point(fill = 'white', stroke = 1, shape = 21, alpha = .7) +
+  geom_rect(xmin=AOI[1], xmax=AOI[2], ymin=AOI[3], ymax=AOI[4], fill = NA, size = 1, color = 'yellow') +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Areas of interest') +
+  theme_bw() + theme(legend.position = 'none')
+```
+
+#### Exercise 5
+
+Find out whether anyone looked at the black sheep!
+
+```{r AOI exercise 1}
+img <- jpeg::readJPEG('Pics/VisualSearch/sheep.jpg')
+img <- grid::rasterGrob(img, interpolate=TRUE)
+
+## Define vertices of AOI
+AOI = c(800, 1050, 0, 350)
+
+## Check whether Fixations are within AOI
+Fixations <- Fixations %>%
+  mutate(
+    FixationInAOI = ifelse(PositionX > 800 &
+                             PositionX < 1050 &
+                             PositionY > 0 &
+                             PositionY < 350, TRUE, FALSE)
+  )
+
+x = subset(Fixations, FixationInAOI == TRUE & Task == 'VisualSearch' & Trial == 1)
+ggplot(x, aes(x = PositionX, y = PositionY, color = ParticipantID, size = Duration)) +
+  annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  geom_point(fill = 'white', stroke = 1, shape = 21, alpha = .7) +
+  geom_rect(xmin=AOI[1], xmax=AOI[2], ymin=AOI[3], ymax=AOI[4], fill = NA, size = 1, color = 'yellow') +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Areas of interest') +
+  theme_bw() + theme(legend.position = 'none')
+min()
+```
+
+#### Exericise 6: Time To First Fixation
+Find Time To First Fixation for each subject*trial in pre-defined AOI with coordinates x = 1000,1500 and y = 600, 900. The stimulus picture should be 'penguins.jpg':
+
+```{r AOI exercise 2}
+
+```
