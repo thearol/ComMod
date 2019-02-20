@@ -9,22 +9,331 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r libraries}
+library(tidyverse)
+library(lme4)
 ```
 
-## Including Plots
+VISUAL SEARCH
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+## Load data
+
+```{r load data}
+## Set working directory to the relevant one on your computer
+getwd()
+setwd('/Users/signeklovekjaer/Documents/CognitiveScience/4.semester/Computational_modeling_for_cognitive_science/Eye_tracking_workshop/Portfolio')
+
+Fixations <- read_csv('fixations2018_2019.csv')
+Saccades <- read_csv('saccades2018_2019.csv')
+
+# Make sure variables are of the right type
+Fixations <- Fixations %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),
+    Item = as.factor(Item)
+  )
+
+Saccades <- Saccades %>%
+  mutate(
+    ParticipantID = as.factor(ParticipantID),
+    Direction = as.factor(Direction),
+    Year = as.factor(Year),
+    Task = as.factor(Task),
+    ParticipantGender = as.factor(ParticipantGender),
+    Item = as.factor(Item)
+  )
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Fixation duration ~ Task + StartTime(if dependent on task, would interact with task) +  (1 + Task | Item) + (1 + Task + StartTime  | Participant)
+
+
+```{r}
+library(lme4)
+
+library(tidyverse)
+
+#fixation duration
+
+
+#split the dataset 
+Fixations_vs <- subset(Fixations, Task == "VisualSearch_Count" | Task == "VisualSearch_Star")
+
+#need to change number of levels
+what <- unique(Fixations_vs$Task, incomparables = FALSE)
+
+what
+
+#use factor()
+Fixations_vs$Task <- factor(Fixations_vs$Task)
+
+what <- unique(Fixations_vs$Task, incomparables = FALSE)
+
+what #now it works 
+
+
+Fixations_vs <- mutate(Fixations_vs, sdStartTime = scale(Fixations_vs$StartTime))
+
+model_1 <- glmer(Duration ~ Task + sdStartTime + (1 + Task + sdStartTime | ParticipantID) + (1 + Task | Item), data = Fixations_vs, family = gaussian(link = log))
+
+model_2 <- glmer(Duration ~ Task + (1 + Task + sdStartTime | ParticipantID) + (1 + Task | Item), data = Fixations_vs, family = gaussian(link = log))
+
+sum_model_null <- glmer(Duration ~ 1 + (1 + Task + sdStartTime | ParticipantID) + (1 + Task | Item), data = Fixations_vs, family = gaussian(link = log))
+
+sum_model_1 <- summary(model_1)
+
+sum_model_2 <- summary(model_2)
+
+sum_model_2
+
+
+
+```
+
+
+We need to take the exponential of the estimates in the fixed effects in order to be able to interpret the results. 
+
+Take exponential of the intercept (the mean of the counting task) and add it to the estimates of the fixed effects. Important that you take the whole b + a*x before you take the exponential, so exp(intercept + estimate)
+
+
+
+```{r}
+#interpret the results
+mean_duration_count <- exp(5.69196)
+mean_duration_count
+
+change_duration_from_count_to_star <- exp( 5.69196 -0.22903)
+change_duration_from_count_to_star
+
+```
+
+
+
+To find R-squared use Mumin.
+
+```{r}
+library(metafor)
+library(lmerTest)
+
+#compare the models with anova 
+anova <- anova(sum_model_null, sum_model_1, sum_model_2)
+
+
+summary(anova)
+```
+
+
+Fixation duration:
+-------
+Duration ~ Task + StartTime_norm + (1 + Task | Item) + (1 + Task + StartTime_norm | ParticipantID)
+Duration ~ Task * StartTime_scaled + (1 + Task + StartTime_scaled | Item) + (1 | ParticipantID) + (0 + Task | ParticipantID)
+
+
+Saccade amplitude:
+-------
+Amplitude ~ Task + StartTime_scaled + (1 | Item) + (1 | ParticipantID)
+Amplitude ~ Task * StartTime_scaled + (1 + Task | ParticipantID)
+Amplitude ~ Task * StartTime_norm + (1 + Task | Item) + (1 + Task | ParticipantID)
+
+Saccade velocity:
+-------
+SacVel ~ Task + StartTime_scaled + (1 | Item) + (1 | ParticipantID)
+SacVel ~ Task * StartTime_scaled + (1 + Task | ParticipantID)
+
+
+SOCIAL ENGAGEMENT 
+
+```{r}
+#merge the dataframes to get the items 
+
+logfile_se <- read_csv("logfilesSE.csv")
+
+logfile_se$ParticipantID <- tolower(logfile_se$ParticipantID)
+
+Fixations_se <- subset(Fixations, Task == "SocialEngagement" & Year == 2018)
+
+logfile_se <- read_csv("logfilesSE.csv")
+
+Fixations_se <- merge(Fixations_se, logfile_se, by = c("ParticipantID", "Trial"))
+
+
+```
+
+
+```{r}
+#extract from filename and prepare dataset
+
+Fixations_se$Condition_di <- ifelse(grepl("div", Fixations_se$Video), "div", "dir")
+
+Fixations_se$Condition_o <- ifelse(grepl( "-", Fixations_se$Video), "-o", "+o")
+
+Fixations_se$video_gender <- ifelse(grepl("f", Fixations_se$Video), "f", "m")
+
+Fixations_se$Condition <- paste(Fixations_se$Condition_di,Fixations_se$Condition_o, sep = "")
+
+#deselect extra columns 
+Fixations_se <- subset(Fixations_se, select = -c(Task.y))
+
+Fixations_se$Task.x <- factor(Fixations_se$Task.x)
+
+#scale starttime
+Fixations_se <- mutate(Fixations_se, stdStartTime = scale(Fixations_se$StartTime))
+
+
+```
+
+```{r}
+#what kind of model should we make?
+
+library(ggplot2)
+hist(Fixations_se$PupilSize)
+
+ggplot(Fixations_se, aes(PupilSize)) + geom_density() 
+
+
+ggplot(Fixations_se, aes(PupilSize, color = ParticipantID)) + geom_density()
+
+
+```
+
+From plotting distribution of pupilsize for each participant it's clear that the plot of all participants pupil distribution is mostly driven by individuals having different baselines. The distributions for the individual participants look somewhat like a gaussian distribution. We will therefore create a lmer model assuming a gaussian distribution and controlling for participants having different baselines by including Participant ID as random intercepts.   
+
+```{r}
+#create models
+
+model_pupil <- lmer(PupilSize ~ Condition + stdStartTime + (1 + Condition + stdStartTime| ParticipantID), data = Fixations_se, REML = FALSE)
+
+model_null <-  lmer(PupilSize ~ Condition + (1 + Condition + stdStartTime| ParticipantID), data = Fixations_se, REML = FALSE)
+
+model_pupil_inter <- lmer(PupilSize ~ Condition_o*Condition_di + stdStartTime + (1 + Condition + stdStartTime| ParticipantID), data = Fixations_se, REML = FALSE)
+
+
+
+summary(model_pupil)
+
+summary(model_pupil_inter)
+
+
+model_fix <- glmer(Duration ~ Condition +  stdStartTime + (1 + Condition +  stdStartTime | ParticipantID), family = gaussian (link = log), data = Fixations_se)
+
+summary(model_fix)
+
+library(MuMIn)
+
+r.squaredGLMM(model_pupil)
+
+r.squaredGLMM(model_null)
+
+```
+```{r}
+#create models wih separate conditions
+
+model_pupil <- glmer(PupilSize ~ Condition_o + Condition_di + stdStartTime + (1 + Condition_o + Condition_di + stdStartTime| ParticipantID),family = gaussian (link = log), data = Fixations_se)
+
+
+model_pupil_1 <- glmer(PupilSize ~ Condition_o + Condition_di + stdStartTime + (1 + stdStartTime| ParticipantID),family = gaussian (link = log), data = Fixations_se)
+
+
+model_null <-  glmer(PupilSize ~ Condition_o + Condition_di + (1 + Condition_o + Condition_di + stdStartTime| ParticipantID),family = gaussian (link = log), data = Fixations_se)
+
+model_pupil_inter <- glmer(PupilSize ~ Condition_o*Condition_di + stdStartTime + (1 + Condition_di + Condition_o + stdStartTime| ParticipantID),family = gaussian (link = log), data = Fixations_se)
+
+
+model_pupil_inter_1 <- glmer(PupilSize ~ Condition_o*Condition_di + stdStartTime + (1 + stdStartTime| ParticipantID),family = gaussian (link = log), data = Fixations_se)
+
+summary(model_pupil_inter_1)
+
+summary(model_pupil_1)
+
+
+
+model_fix <- glmer(Duration ~ Condition_di * Condition_o +  stdStartTime + (1 + Condition_di + Condition_o +  stdStartTime | ParticipantID), family = gaussian (link = log), data = Fixations_se)
+
+summary(model_fix)
+
+
+r.squaredGLMM(model_pupil_1)
+
+r.squaredGLMM(model_pupil)
+```
+
+
+
+
+
+
+
+```{r}
+#what kind of participants
+
+unique(Fixations_se$ParticipantID)
+
+Fixations_se$video_gender <- as.factor(Fixations_se$video_gender)
+
+unique(Fixations_se$ParticipantID) %>%
+  table(Fixations_se$video_gender)
+
+unique(Fixations_se$ParticipantID)
+
+```
+
+
+```{r}
+#plot predictions of pupil size 
+library(beeswarm)
+library(ggplot2)
+library(ggbeeswarm)
+
+pred_pup = Fixations_se %>%
+  distinct(Condition_di, Condition_o, stdStartTime, ParticipantID, PupilSize) %>%
+  cbind(predict(model_pupil_inter_1, newdata_1 = ., interval = "confidence"))
+
+
+plot_pupil_pred <- ggplot(Fixations_se, aes(x = Condition_di, y = PupilSize)) + 
+  geom_quasirandom(alpha = 0.5, colour = "dark red") + 
+  labs(x = "Condition (directed, diverse) ", y = "Pupil size", title = "Mean model predictions of pupil size") + 
+
+  #geom_boxplot(alpha = 0.5) +p
+  #geom_point(aes(y = `predict(model_pupil, newdata_1 = ., interval = "confidence")`), data = pred_pup, size = 2) +
+  stat_summary(fun.data = "mean_cl_boot", colour = "red", size = 1) + 
+  #geom_errorbar(aes(y = NULL, ymin = lwr, ymax = upr), data = pred_RR_HR, width = .3) +
+  facet_wrap(~Condition_o) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+plot_pupil_pred
+
+
+
+
+```
+
+
+FIXATION DURATION 
+
+```{r}
+
+
+#predictions 
+pred_fix = Fixations_se %>%
+  distinct(Condition_o, Condition_di, stdStartTime, ParticipantID, Duration) %>%
+  cbind(predict(model_fix, newdata = ., interval = "confidence"))
+
+
+plot_pred_fix <- ggplot(Fixations_se, aes(x = Condition_di, y = Duration)) + 
+  geom_quasirandom(alpha = 0.5, colour = "dark red") + 
+  labs(x = "Condition (directed, diverse)", y = "Fixation duration", title = "Mean model predictions og fixation duration") + 
+
+  #geom_boxplot(alpha = 0.5) +p
+  #geom_point(aes(y = `predict(model_fix, newdata = ., interval = "confidence")`), data = pred_fix, size = 2) 
+  stat_summary(fun.data = "mean_cl_boot", colour = "red", size = 0.5) + 
+  #geom_errorbar(aes(y = NULL, ymin = lwr, ymax = upr), data = pred_RR_HR, width = .3) +
+  facet_wrap(~Condition_o) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+plot_pred_fix
+
+
+
+
+```
