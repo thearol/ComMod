@@ -9,6 +9,8 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+
 ```{r libraries}
 library(tidyverse)
 library(lme4)
@@ -99,6 +101,9 @@ We need to take the exponential of the estimates in the fixed effects in order t
 Take exponential of the intercept (the mean of the counting task) and add it to the estimates of the fixed effects. Important that you take the whole b + a*x before you take the exponential, so exp(intercept + estimate)
 
 
+For interaction: 
+
+a(intercept) + b1*x1 + b2*x2 + b3*x1*x2 
 
 ```{r}
 #interpret the results
@@ -191,10 +196,18 @@ Fixations_se <- mutate(Fixations_se, stdStartTime = scale(Fixations_se$StartTime
 library(ggplot2)
 hist(Fixations_se$PupilSize)
 
-ggplot(Fixations_se, aes(PupilSize)) + geom_density() 
+ggplot(Fixations_se, aes(PupilSize)) + geom_density() + labs(title = "Distribution of average pupilsize") 
 
 
-ggplot(Fixations_se, aes(PupilSize, color = ParticipantID)) + geom_density()
+ggplot(Fixations_se, aes(PupilSize, color = ParticipantID)) + geom_density() + labs(title = "Inidvidual  distribution of pupilsize")
+
+
+
+ggplot(Fixations_se, aes(Duration)) + geom_density() + labs(title = "Distribution of average fixation duration")
+
+
+ggplot(Fixations_se, aes(Duration, color = ParticipantID)) + geom_density() + labs(title = "Inidvidual distribution of fixation duration")
+
 
 
 ```
@@ -225,7 +238,9 @@ library(MuMIn)
 
 r.squaredGLMM(model_pupil)
 
-r.squaredGLMM(model_null)
+r.squaredGLMM(model_pupil_inter_1)
+
+anova(model_pupil, model_pupil_inter_1)
 
 ```
 ```{r}
@@ -246,7 +261,7 @@ model_pupil_inter_1 <- glmer(PupilSize ~ Condition_o*Condition_di + stdStartTime
 
 summary(model_pupil_inter_1)
 
-summary(model_pupil_1)
+summary(model_pupil)
 
 
 
@@ -258,8 +273,20 @@ summary(model_fix)
 r.squaredGLMM(model_pupil_1)
 
 r.squaredGLMM(model_pupil)
+
+
+anova( model_pupil, model_pupil_1)
 ```
 
+```{r}
+exp(7.53 - 0.02 - 0.02 + 0.05) - exp(7.53 - 0.02 - 0.02) 
+
+exp(7.53 + 0.01 - 0.03 + 0.04 - 0.03) - exp(7.53 + 0.01 + 0.04 - 0.03)
+
+exp(7.53 + 0.01 - 0.03 + 0.04 - 0.03) - exp(7.53 + 0.01 -0.03 - 0.03)
+
+
+```
 
 
 
@@ -289,7 +316,7 @@ library(ggbeeswarm)
 
 pred_pup = Fixations_se %>%
   distinct(Condition_di, Condition_o, stdStartTime, ParticipantID, PupilSize) %>%
-  cbind(predict(model_pupil_inter_1, newdata_1 = ., interval = "confidence"))
+  cbind(predict(model_pupil, newdata_1 = ., interval = "confidence"))
 
 
 plot_pupil_pred <- ggplot(Fixations_se, aes(x = Condition_di, y = PupilSize)) + 
@@ -337,3 +364,18 @@ plot_pred_fix
 
 
 ```
+```{r}
+#
+exp(7.53 + 0.05) - exp(7.53)
+
+exp(7.53 + 0.05 + ) - exp(7.53)
+
+
+
+
+```
+a(intercept) + b1*x1 + b2*x2 + b3*x1*x2 
+```{r}
+exp()
+```
+
