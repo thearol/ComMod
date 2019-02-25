@@ -23,7 +23,7 @@ library(ggplot2)
 ```{r load data}
 ## Set working directory to the relevant one on your computer
 #getwd()
-#setwd()
+setwd('C:/Users/slmoni/Documents/Uni/Eye tracking/ComMod/1_eyetracking')
 
 Fixations <- read_csv('fixations2018_2019.csv')
 Saccades <- read_csv('saccades2018_2019.csv')
@@ -171,6 +171,54 @@ ggplot(VSsacc, aes(x=Task, y=MeanVelocity, color=Task)) +
   labs(title = 'Distribution of Mean Velocity of Saccades Acording to Task')
 
 #Start time falls in both saccade models, indicating that the saccades are longer and faster in the beginning of each item. 
+
+
+for(i in unique(Fixations$ParticipantID)){
+  x = subset(Fixations2, ParticipantID ==	i)
+  plot<-ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  geom_path(alpha = .6, color = '#F0B952') +
+  geom_point(size = x$Duration*7, alpha = .6, color = '#6291D6', stroke = 1, shape = 21) +
+  #ggrepel::geom_text_repel(aes(label = FixationNum), size = 3, color = 'black') +
+  facet_wrap(~Item.y) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle(paste('Scanpath for visual search task',i)) +
+  theme_bw() + theme(legend.position = 'none')
+  print(plot)
+}
+
+
+# Ploting scan patch
+img <- jpeg::readJPEG('Pics/VisualSearch/space_capsules.jpg')
+img <- grid::rasterGrob(img, interpolate=TRUE)
+
+x = subset(Fixations, ParticipantID ==	'2018-6_3_m2')
+x = subset(x, Item == 'space_capsules.jpg')
+ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  geom_path(alpha = 1, color = 'blue' ,size=1) +
+  geom_point(size = x$Duration*0.025, alpha = 1, color = 'red', stroke = 1, shape = 21) +
+  ggrepel::geom_text_repel(aes(label = Fixation), size = 4.5, color = 'red') +
+  #facet_wrap(~Item) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Scanpath for star search task') +
+  theme_bw() + theme(legend.position = 'none')
+img <- jpeg::readJPEG('Pics/VisualSearch/space_capsules.jpg')
+img <- grid::rasterGrob(img, interpolate=TRUE)
+
+x = subset(Fixations, ParticipantID ==	'2018-4_2_F1')
+x = subset(x, Item == 'space_capsules.jpg')
+ggplot(x, aes(x = PositionX, y = 1081-PositionY)) +
+  annotation_custom(img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  geom_path(alpha = 1, color = 'blue' ,size=1) +
+  geom_point(size = x$Duration*0.025, alpha = 1, color = 'red', stroke = 1, shape = 21) +
+  ggrepel::geom_text_repel(aes(label = Fixation), size = 4.5, color = 'red') +
+  #facet_wrap(~Item) +
+  ## the following lines are for aesthetic purposes only
+  xlim(0,1920) + ylim(0,1080) +
+  ggtitle('Scanpath for count task') +
+  theme_bw() + theme(legend.position = 'none')
 
 ```
 
