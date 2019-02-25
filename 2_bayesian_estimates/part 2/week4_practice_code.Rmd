@@ -1,0 +1,15 @@
+
+## Data for chapter 3, easy practice questions
+
+res = 1000 # how many parameter values in the grid approximation
+p_grid = seq(from = 0, to = 1, length.out = res) # the grid
+prior = rep(1, res) # uniform prior
+likelihood = dbinom(6, 9, prob = p_grid) # likelihood of 6 correct out of 9
+posterior = likelihood * prior # bayes rule
+posterior = posterior / sum(posterior)
+set.seed(100) # pre-determine the random number generator so we all get the same results
+samples = sample(p_grid, prob = posterior, size = 1e4, replace = TRUE) # sample from the posterior
+
+## Data for chapter 3, hard practice questions
+library(rethinking)
+data(homeworkch3)
