@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
 
+
 ### First part
 
 You want to assess your teachers' knowledge of cognitive science. "These guys are a bunch of drama(turgist) queens, mindless philosophers, chattering communication people and Russian spies. Do they really know CogSci?", you think.
@@ -27,38 +28,465 @@ This is the data:
 
 Questions:
 
-1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
-- First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
-- Then implement a quadratic approximation (hint check paragraph 2.4.2!).
-- N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
+#1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
 
-2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+```{r, include=FALSE}
+# define grid
+grid <- seq( from=0 , to=1 , length.out=100)
+# define prior
+uni_prior <- rep( 1 , 100)
+alt_prior <- ifelse(grid < 0.5 , 0 , 1 )
+# compute likelihood at each value in grid
+likelihood <- dbinom( 3 , size=6 , prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * uni_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+ric_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Riccardo: 100 points")
+
+
+
+
+
+#sample 10.000
+samples_ric <- sample( grid , prob=posterior , size=1e4 , replace=TRUE )
+
+#probability that riccardo knows more than chance
+sum( samples_ric > 0.5 ) / length (samples_ric) #100 %
+
+```
+
+
+```{r, include=TRUE}
+sum( samples_ric > 0.5 ) / length (samples_ric) 
+
+```
+The propbability of Riccardo knowing more than chance depends on the prior. If it is the uniform prior then there is a 50% chance that he knows more than 0.5. If we use a prior which assigns 0 to grid-values below 0.5 and 1 to grid-values above 0.5, then there is a 100% chance that he performs above chance.
+
+
+- First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
+
+```{r, echo=TRUE}
+#plot
+ric_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Riccardo: 100 points")
+
+```
+
+
+- Then implement a quadratic approximation (hint check paragraph 2.4.2!).
+
+```{r, include=FALSE}
+
+#quadratic
+library(rethinking)
+
+globe.qa <- map(
+    alist(
+        w ~ dbinom(6,p) ,  # binomial likelihood
+        p ~ dunif(0,1)     # uniform prior
+), data=list(w=3) )
+# display summary of quadratic approximation
+precis( globe.qa )
+
+#  Mean StdDev 5.5% 94.5%
+# p  0.5    0.2 0.17  0.83
+
+
+
+#Assuming that the posterior is Gaussian distributed, it is maximized at 0.5 and its standard deviation is 0.2.
+
+
+```
+
+```{r, echo=TRUE}
+
+# analytical calculation
+w <- 3
+n <- 6
+curve( dbeta( x , w+1 , n-w+1 ) , from=0 , to=1 )
+# quadratic approximation
+curve( dnorm( x , 0.5 , 0.2 ) , lty=2 , add=TRUE )
+```
+
+N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
+
+
+
+
+#2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+
 2a. Produce plots of the prior, and posterior for each teacher.
 
-3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
+From now on we will use the following prior that assumes the teachers will perform better than chance (which is basically the same as having zero CogSci knowledge)
+
+```{r, echo=TRUE}
+#plot of prior
+
+Data=data.frame(grid=grid,posterior=posterior,prior=alt_prior,likelihood=likelihood)
+ggplot(Data,aes(grid,posterior)) + geom_line(aes(grid,alt_prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of prior")
+
+
+```
+
+
+```{r, echo=TRUE}
+
+
+# tylle
+
+# compute likelihood at each value in grid
+likelihood <- dbinom( 2 , size=2 , prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * alt_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+tylle_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Tylle: 100 points")
+
+#Josh
+# compute likelihood at each value in grid
+likelihood <- dbinom( 160 , size=198 , prob=grid )
+# compute product of likelihood and alt_prior
+unstd.posterior <- likelihood * alt_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+josh_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Josh: 100 points")
+
+#Mikkel
+# compute likelihood at each value in grid
+likelihood <- dbinom( 66 , size=132 , prob=grid )
+# compute product of likelihood and alt_prior
+unstd.posterior <- likelihood * alt_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+mikkel_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Mikkel: 100 points")
+
+#Riccardo
+# compute likelihood at each value in grid
+likelihood <- dbinom( 3 , size=6 , prob=grid )
+# compute product of likelihood and alt_prior
+unstd.posterior <- likelihood * alt_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+riccardo_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Riccardo: 100 points")
+
+
+```
+
+In percentages Riccardo and Mikkel answer roughly equally bad. However, since we have many more datapoints from Mikkel, as the posterior distribution shows, we can be much more certain in assessing Mikkel's CogSci knowdge. This is shown in the area under the curve being more narrow compared to Riccardo's.
+
+#Who's best?
+Assessing the posterior distribution, we are quite certrain that Josh's knowledge lays around 0.8, which is somewhat impressive. However, looking at Tylle's curve we are very uncertain - it could be 0.5, but also 1 (awesome).
+
+
+
+#3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
 3a. Produce plots of the prior and posterior for each teacher.
 
-4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
+```{r, echo=TRUE}
+# new_prior <- dnorm(grid,0.8,0.2)
+# plot(new_prior)
+#plot of new prior
 
-5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
+new_Data=data.frame(grid=grid,posterior=posterior,prior=new_prior,likelihood=likelihood)
+ggplot(new_Data,aes(grid,posterior)) + geom_line(aes(grid,prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of new prior")
+
+```
+
+
+```{r, echo=TRUE}
+
+#posterior for each teacher
+
+# tylle
+
+# compute likelihood at each value in grid
+likelihood <- dbinom( 2 , size=2 , prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * new_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+tylle_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Tylle: 100 points")
+
+#Josh
+# compute likelihood at each value in grid
+likelihood <- dbinom( 160 , size=198 , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * new_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+josh_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Josh: 100 points")
+
+#Mikkel
+# compute likelihood at each value in grid
+likelihood <- dbinom( 66 , size=132 , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * new_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+mikkel_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Mikkel: 100 points")
+
+#riccardo
+# compute likelihood at each value in grid
+likelihood <- dbinom( 3 , size=6 , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * new_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+ric_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Riccardo: 100 points")
+
+
+
+```
+
+Change in results:
+Yes, they change. At least for Tylle and Riccardo. We can see that the prior affects the posterior more, when there are few datapoints. Josh and Mikkel remain more or less the samme, since there are many datapoints, and thereby are not so manipulative by the prior. 
+
+
+
+#4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
+
+```{r, echo=TRUE}
+#multiply all data with 100
+new_d <- d*100
+new_d$Teacher <- d$Teacher
+
+new_d
+```
+
+```{r, include=FALSE}
+#different priors
+
+uni_prior <- rep( 1 , 100)
+norm_prior <- dnorm(grid,0.8,0.2)
+
+```
+
+Uniform prior
+```{r}
+
+#posterior for each teacher
+
+# tylle
+
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[2,1] , size= new_d[2,1], prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * uni_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+tylle_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Tylle: 100 points")
+
+#Josh
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[3,1] , size=new_d[3,2] , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * uni_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+josh_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Josh: 100 points")
+
+#Mikkel
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[4,1] , size=new_d[4,2] , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * uni_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+mikkel_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Mikkel: 100 points")
+
+#riccardo
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[1,1] , size=new_d[1,2], prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * uni_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+ric_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Riccardo: 100 points")
+
+
+```
+
+
+Normal prior: 
+```{r}
+
+#posterior for each teacher
+
+# tylle
+
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[2,1] , size= new_d[2,1], prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * norm_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+tylle_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Tylle: 100 points")
+
+#Josh
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[3,1] , size=new_d[3,2] , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * norm_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+josh_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Josh: 100 points")
+
+#Mikkel
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[4,1] , size=new_d[4,2] , prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * norm_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+mikkel_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Mikkel: 100 points")
+
+#riccardo
+# compute likelihood at each value in grid
+likelihood <- dbinom( new_d[1,1] , size=new_d[1,2], prob=grid )
+# compute product of likelihood and new_prior
+unstd.posterior <- likelihood * norm_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+ric_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("New Riccardo: 100 points")
+
+```
+
+The impact of the prior becomes very small when we have so much data.
+
+
+
+#5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
+
+Make a prior of a normal distribution that peaks at 0.5 and with a quite small SE, since we are pretty sure that they are useless. 
+```{r}
+
+stupid_prior <- dnorm(grid,0.5,0.1)
+
+new_Data=data.frame(grid=grid,posterior=posterior,prior=stupid_prior,likelihood=likelihood)
+ggplot(new_Data,aes(grid,posterior)) + geom_line(aes(grid,stupid_prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of new prior")
+
+
+# tylle
+
+# compute likelihood at each value in grid
+likelihood <- dbinom( 2 , size=2 , prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * stupid_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+#plot
+tylle_plot <- plot( grid , posterior , type="b" ,
+    xlab="probability of correct" , ylab="posterior probability" )
+mtext("Tylle: 100 points")
+
+
+
+```
+
 
 6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
 
+```{r}
+
+```
+
+
 7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
 ```{r}
-library(brms)
+library(pacman)
+p_load(brms)
+
 d <- data.frame(
   Correct=c(3,2,160,66),
   Questions=c(6,2,198,132),
   Teacher=c("RF","KT","JS","MW"))
 
+d
+
 FlatModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("uniform(0,1)", class = "Intercept"),family=binomial)
 plot(FlatModel)
+
 PositiveModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.8,0.2)", class = "Intercept"),family=binomial)
 plot(PositiveModel)
+
 SkepticalModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.5,0.01)", class = "Intercept"),family=binomial)
 plot(SkepticalModel)
 ```
+
+
+
+
 
 If you dare, try to tweak the data and model to test two hypotheses:
 - Is Kristian different from Josh?
