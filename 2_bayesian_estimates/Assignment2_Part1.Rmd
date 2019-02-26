@@ -6,6 +6,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+library(rethinking)
+
 ```
 
 ## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
@@ -28,12 +31,78 @@ This is the data:
 Questions:
 
 1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
+```{r}
+# define grid
+p_grid <- seq(from=0, to=1, length.out=1000)
+# define prior
+prior <- c(rep( 0 , 500 ), rep(1,500))
+# compute likelihood at each value in grid
+likelihood <- dbinom(3 , size=6 , prob=p_grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+plot( p_grid , posterior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Riccardo")
+
+
+globe.qa <- map(
+    alist(
+        w ~ dbinom(9,p) ,  # binomial likelihood
+        p ~ dunif(0,1)     # uniform prior
+), data=list(w=6) )
+# display summary of quadratic approximation
+precis( globe.qa )
+```
+
 - First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
 - Then implement a quadratic approximation (hint check paragraph 2.4.2!).
 - N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
 
 2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+
+The posteriors of Riccardo and Mikel are exactly the same. 
+
 2a. Produce plots of the prior, and posterior for each teacher.
+```{r}
+# define grid
+p_grid <- seq(from=0, to=1, length.out=1000)
+# define prior
+prior <- c(rep( 0 , 500 ), rep(1,500))
+# compute likelihood at each value in grid
+likelihood_Kristian <- dbinom(2 , size=2 , prob=p_grid )
+unstd.posterior_Kristian <- likelihood_Kristian * prior
+posterior_Kristian <- unstd.posterior_Kristian / sum(unstd.posterior_Kristian)
+
+plot( p_grid , posterior_Kristian , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Kristian")
+
+### JOSH
+
+likelihood_Josh <- dbinom(160 , size=198 , prob=p_grid )
+unstd.posterior_Josh <- likelihood_Josh * prior
+posterior_Josh <- unstd.posterior_Josh / sum(unstd.posterior_Josh)
+
+plot( p_grid , posterior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Josh")
+
+## MIKKEL
+
+likelihood_Mikkel <- dbinom(66 , size=132 , prob=p_grid )
+unstd.posterior_Mikkel <- likelihood_Mikkel * prior
+posterior_Mikkel <- unstd.posterior_Mikkel / sum(unstd.posterior_Mikkel)
+
+plot( p_grid , posterior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Mikkel")
+
+## Prior
+plot( p_grid , prior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="prior probability" , main = "All teachers")
+
+```
+
+
 
 3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
 3a. Produce plots of the prior and posterior for each teacher.
