@@ -286,7 +286,7 @@ posteriorMik <- unstd.posterior / sum(unstd.posterior)
 ```
 6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
 ```{r 6.}
-
+#sample from ric - samples from other teachers
 ```
 7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
 ```{r}
