@@ -1,6 +1,7 @@
 ---
 title: "Computational Modeling - Week 3 - Assignment 2 - Part 1"
-author: "Riccardo Fusaroli"
+author: "Simon Moeller Nielsen"
+date: "28/2/2019"
 output: html_document
 ---
 
