@@ -50,13 +50,14 @@ unstd.posterior <- likelihood * prior
 # standardize the posterior, so it sums to 1
 posterior <- unstd.posterior / sum(unstd.posterior)
 
+# Finding area above 0.5
 sum( posterior[ p_grid > 0.5 ] )
 ### The probability Riccardo knows more than chance is 0.5
 
 #ploting
 plot( p_grid , posterior , type="b" ,
-xlab="probability of water" , ylab="posterior probability" )
-mtext( "Posterior distribution of Riccardo CogSci knowledge" )
+xlab="probability of correct answers" , ylab="posterior probability" )
+mtext( "Posterior distribution of Riccardo CogSci knowledge using grid approximation" )
 
 ## Using quadratic approximation
 globe.qa <- map(
@@ -69,8 +70,15 @@ data=list(w=3) )
 precis( globe.qa )
 curve( dnorm( x , 0.5 , 2 ) )
 
-samples <- rbinom(1000, size=)
-samples <- sample( p_grid , prob=posterior , size=1000 , replace=TRUE )
+# Getting samples and finding area above 0.5
+rdata<-dnorm(p_grid, 0.5 , 2 )
+
+sum( rdata[ p_grid > 0.5 ] )/ sum(rdata)
+
+#ploting
+plot( p_grid , rdata , type="b" ,
+xlab="probability of correct answers" , ylab="posterior probability" )
+mtext( "Posterior distribution of Riccardo CogSci knowledge using quadratic approximation" )
 
 ```
 2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
@@ -81,6 +89,11 @@ prior <- rep( 1,1000 )
 likelihood <- dbinom( 3 , size=6 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorRic <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorRic , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 
 # Kristian: 2 correct answers out of 2 questions
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
@@ -88,6 +101,11 @@ prior <- rep( 1,1000 )
 likelihood <- dbinom( 2 , size=2 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorKri <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorKri , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 
 # Josh: 160 correct answers out of 198 questions
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
@@ -95,6 +113,11 @@ prior <- rep( 1,1000 )
 likelihood <- dbinom( 160 , size=198 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorJos <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorJos , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 
 # Mikkel: 66 correct answers out of 132 questions
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
@@ -102,31 +125,26 @@ prior <- rep( 1,1000 )
 likelihood <- dbinom( 66 , size=132 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorMik <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorMik , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 ```
 2a. Produce plots of the prior, and posterior for each teacher.
 ```{r 2a.}
-# Plotting prior
+# Plotting
 probPrior<-prior/1000
-plot( p_grid , probPrior , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
 
-# Ploting posteriors
-plot( p_grid , posteriorRic , type="b" ,
+plot( p_grid , posteriorJos , type="b" , col= 'orange',
 xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Riccardo's CogSci knowledge" )
-
-plot( p_grid , posteriorKri , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Kristian's CogSci knowledge" )
-
-plot( p_grid , posteriorJos , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Josh's CogSci knowledge" )
-
-plot( p_grid , posteriorMik , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Mikkel's CogSci knowledge" )
-
+points(p_grid,posteriorMik, type="b",col= 'red')
+points(p_grid,posteriorKri, type="b", col= 'blue')
+points(p_grid,posteriorRic, type="b", col= 'green')
+points(p_grid,probPrior, type="b")
+legend("topleft", legend=c("Josh posterior", "Mikkel posterior",'Kristion posterior','Riccardo posterior','Prior'),
+       col=c("orange", "red",'blue', 'green','black'), pch = 1, cex=0.8)
+mtext( "Posterior distributions" )
 ```
 3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
 ```{r 3.}
@@ -136,6 +154,11 @@ prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 3 , size=6 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorRic <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorRic , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 
 # Kristian: 2 correct answers out of 2 questions
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
@@ -143,6 +166,11 @@ prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 2 , size=2 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorKri <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorKri , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 
 # Josh: 160 correct answers out of 198 questions
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
@@ -150,6 +178,11 @@ prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 160 , size=198 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorJos <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorJos , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 
 # Mikkel: 66 correct answers out of 132 questions
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
@@ -157,101 +190,156 @@ prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 66 , size=132 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorMik <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorMik , size=1e4 , replace=TRUE )
+
+mean( samples)
+HPDI( samples , prob=0.97 )
 ```
 3a. Produce plots of the prior and posterior for each teacher.
 ```{r 3a.}
-# Plotting prior
+# Plotting
 probPrior<-prior/1000
-plot( p_grid , probPrior , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
 
-# Ploting posteriors
-plot( p_grid , posteriorRic , type="b" ,
+plot( p_grid , posteriorJos , type="b" , col= 'orange',
 xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Riccardo's CogSci knowledge" )
-
-plot( p_grid , posteriorKri , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Kristian's CogSci knowledge" )
-
-plot( p_grid , posteriorJos , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Josh's CogSci knowledge" )
-
-plot( p_grid , posteriorMik , type="b" ,
-xlab="probability of correct answers" , ylab="posterior probability" )
-mtext( "Posterior distribution of Mikkel's CogSci knowledge" )
-
+points(p_grid,posteriorMik, type="b",col= 'red')
+points(p_grid,posteriorKri, type="b", col= 'blue')
+points(p_grid,posteriorRic, type="b", col= 'green')
+points(p_grid,probPrior, type="b")
+legend("topleft", legend=c("Josh posterior", "Mikkel posterior",'Kristion posterior','Riccardo posterior','Prior'),
+       col=c("orange", "red",'blue', 'green','black'), pch = 1, cex=0.8)
+mtext( "Posterior distributions" )
 ```
 4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
 ```{r 4.}
-# Riccardo: 3 correct answers out of 6 questions
+# Riccardo: 3 correct answers out of 6 questions*100
+# Uniform prior
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- rep( 1,1000 )
 likelihood <- dbinom( 300 , size=600 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorRic <- unstd.posterior / sum(unstd.posterior)
+posteriorRic1 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorRic1 , size=1e4 , replace=TRUE )
 
-sum( posteriorRic[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
+# Gaussian prior 
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 300 , size=600 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorRic <- unstd.posterior / sum(unstd.posterior)
+posteriorRic2 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorRic2 , size=1e4 , replace=TRUE )
 
-sum( posteriorRic[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
-# Kristian: 2 correct answers out of 2 questions
+# Kristian: 2 correct answers out of 2 questions*100
+# Uniform prior
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- rep( 1,1000 )
 likelihood <- dbinom( 200 , size=200 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorKri <- unstd.posterior / sum(unstd.posterior)
+posteriorKri1 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorKri1 , size=1e4 , replace=TRUE )
 
-sum( posteriorKri[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
+# Gaussian prior 
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 200 , size=200 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorKri <- unstd.posterior / sum(unstd.posterior)
+posteriorKri2 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorKri2 , size=1e4 , replace=TRUE )
 
-sum( posteriorKri[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
-# Josh: 160 correct answers out of 198 questions
+# Josh: 160 correct answers out of 198 questions *100
+# Uniform prior
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- rep( 1,1000 )
 likelihood <- dbinom( 16000 , size=19800 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorJos <- unstd.posterior / sum(unstd.posterior)
+posteriorJos1 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorJos1 , size=1e4 , replace=TRUE )
 
-sum( posteriorJos[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
+# Gaussian prior 
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 16000 , size=19800 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorJos <- unstd.posterior / sum(unstd.posterior)
+posteriorJos2 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorJos2 , size=1e4 , replace=TRUE )
 
-sum( posteriorJos[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
-# Mikkel: 66 correct answers out of 132 questions
+# Mikkel: 66 correct answers out of 132 questions *100
+# Uniform prior
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- rep( 1,1000 )
 likelihood <- dbinom( 6600 , size=13200 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorMik <- unstd.posterior / sum(unstd.posterior)
+posteriorMik1 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorMik1 , size=1e4 , replace=TRUE )
 
-sum( posteriorMik[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
 
+# Gaussian prior 
 p_grid <- seq( from=0 , to=1 , length.out=1000 )
 prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 6600 , size=13200 , prob=p_grid )
 unstd.posterior <- likelihood * prior
-posteriorMik <- unstd.posterior / sum(unstd.posterior)
+posteriorMik2 <- unstd.posterior / sum(unstd.posterior)
+# Using samples
+samples <- sample( p_grid , prob=posteriorMik2 , size=1e4 , replace=TRUE )
 
-sum( posteriorMik[ p_grid > 0.5 ] )
+mean( samples)
+HPDI( samples , prob=0.97 )
+
+# Plotting uniform
+prior <- rep( 1,1000 )
+probPrior<-prior/1000
+
+plot( p_grid , posteriorJos1 , type="b" , col= 'orange',
+xlab="probability of correct answers" , ylab="posterior probability" )
+points(p_grid,posteriorMik1, type="b",col= 'red')
+points(p_grid,posteriorKri1, type="b", col= 'blue')
+points(p_grid,posteriorRic1, type="b", col= 'green')
+points(p_grid,probPrior, type="b")
+legend("topleft", legend=c("Josh posterior", "Mikkel posterior",'Kristion posterior','Riccardo posterior','Prior'),
+       col=c("orange", "red",'blue', 'green','black'), pch = 1, cex=0.8)
+mtext( "Posterior distributions with flat prior" )
+
+# Plotting gaussian
+prior <- dnorm(p_grid, 0.8, 0.2)
+probPrior<-prior/1000
+
+plot( p_grid , posteriorJos2 , type="b" , col= 'orange',
+xlab="probability of correct answers" , ylab="posterior probability" )
+points(p_grid,posteriorMik2, type="b",col= 'red')
+points(p_grid,posteriorKri2, type="b", col= 'blue')
+points(p_grid,posteriorRic2, type="b", col= 'green')
+points(p_grid,probPrior, type="b")
+legend("topleft", legend=c("Josh posterior", "Mikkel posterior",'Kristion posterior','Riccardo posterior','Prior'),
+       col=c("orange", "red",'blue', 'green','black'), pch = 1, cex=0.8)
+mtext( "Posterior distributions with gaussian prior" )
 ```
 5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
 ```{r 5.}
@@ -286,10 +374,49 @@ posteriorMik <- unstd.posterior / sum(unstd.posterior)
 ```
 6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
 ```{r 6.}
+# Riccardo: 3 correct answers out of 6 questions
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- dnorm(p_grid, 0.8, 0.2)
+likelihood <- dbinom( 3 , size=6 , prob=p_grid )
+unstd.posterior <- likelihood * prior
+posteriorRic <- unstd.posterior / sum(unstd.posterior)
+
+# Kristian: 2 correct answers out of 2 questions
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- dnorm(p_grid, 0.8, 0.2)
+likelihood <- dbinom( 2 , size=2 , prob=p_grid )
+unstd.posterior <- likelihood * prior
+posteriorKri <- unstd.posterior / sum(unstd.posterior)
+
+# Josh: 160 correct answers out of 198 questions
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- dnorm(p_grid, 0.8, 0.2)
+likelihood <- dbinom( 160 , size=198 , prob=p_grid )
+unstd.posterior <- likelihood * prior
+posteriorJos <- unstd.posterior / sum(unstd.posterior)
+
+# Mikkel: 66 correct answers out of 132 questions
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- dnorm(p_grid, 0.8, 0.2)
+likelihood <- dbinom( 66 , size=132 , prob=p_grid )
+unstd.posterior <- likelihood * prior
+posteriorMik <- unstd.posterior / sum(unstd.posterior)
+
+difKri<-posteriorRic-posteriorKri
+difJos<-posteriorRic-posteriorJos
+difMik<-posteriorRic-posteriorMik
+mean(difKri)
+mean(difJos)
+mean(difMik)
+
+plot( p_grid , difJos , type="b" ,
+xlab="probability of correct answers" , ylab="posterior probability" )
+
+
 #sample from ric - samples from other teachers
 ```
 7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
-```{r}
+```{r 7.}
 library(brms)
 d <- data.frame(
   Correct=c(3,2,160,66),
