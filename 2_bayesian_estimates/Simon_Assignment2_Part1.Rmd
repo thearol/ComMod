@@ -402,15 +402,21 @@ prior <- dnorm(p_grid, 0.8, 0.2)
 likelihood <- dbinom( 66 , size=132 , prob=p_grid )
 unstd.posterior <- likelihood * prior
 posteriorMik <- unstd.posterior / sum(unstd.posterior)
+sum(posteriorMik)
+difKri<-sqrt(((posteriorRic)^2))-sqrt(((posteriorKri)^2))
+difKri<-sqrt(difKri)
 
-difKri<-posteriorRic-posteriorKri
+difJos<-((posteriorRic)^2)-log((posteriorJos)^2)
+difJos<-sqrt(difJos)
+
+difKri<-posteriorRic-mean(posteriorKri)
 difJos<-posteriorRic-posteriorJos
 difMik<-posteriorRic-posteriorMik
 mean(difKri)
 mean(difJos)
 mean(difMik)
 
-plot( p_grid , difJos , type="b" ,
+plot( p_grid , difKri , type="b" ,
 xlab="probability of correct answers" , ylab="posterior probability" )
 
 
