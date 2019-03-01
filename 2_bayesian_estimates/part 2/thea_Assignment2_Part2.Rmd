@@ -2,7 +2,9 @@
 title: "Computational Modeling - Week 5 - Assignment 2 - Part 2"
 author: "Riccardo Fusaroli"
 date: "2/19/2017"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -31,12 +33,106 @@ This is the new data:
 - Josh: 148 correct answers out of 172 questions (again, Josh never gets bored)
 - Mikkel: 34 correct answers out of 65 questions
 
+
+
 Guidance Tips
 
 1. There are at least two ways of assessing predictions.
 2. Last year's results are this year's expectations.
 3. Are the parameter estimates changing? (way 1)
-4. How does the new data look in last year's predictive posterior? (way 2)
+4. How does the new data look in last year's predictive posterior? (way 2) 
+
+
+
+
+```{r}
+library(rethinking)
+
+#riccardo 
+
+# define grid
+grid <- seq( from=0 , to=1 , length.out=100)
+# define prior
+alt_prior <- dnorm(grid, 0.8, 0.2)
+# compute likelihood at each value in grid
+likelihood <- dbinom( 3 , size=6 , prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * alt_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+
+samples <- sample(grid, prob=posterior, size = 1e4, replace=TRUE)
+w <- rbinom( 1e4 , size=10 , prob=samples )
+simplehist(w)
+
+#data says 9. the prediction was 7
+
+ric_data <- rep(9,1e4)
+risidual_ric <- simplehist(w-ric_data) #"residual plot" how well did we predict
+
+
+
+
+```
+
+
+
+```{r}
+#tylle
+
+
+# define grid
+grid <- seq( from=0 , to=1 , length.out=100)
+# define prior
+alt_prior <- dnorm(grid, 0.8, 0.2)
+# compute likelihood at each value in grid
+likelihood <- dbinom( 3 , size=6 , prob=grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * alt_prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+
+samples <- sample(grid, prob=posterior, size = 1e4, replace=TRUE)
+w <- rbinom( 1e4 , size=12 , prob=samples )
+simplehist(w)
+
+#data says 9. the prediction was 7
+
+tylle_data <- rep(12,1e4)
+risidual_ric <- simplehist(w-ric_data) #"residual plot" how well did we predict
+
+
+
+```
+
+
+```{r}
+#josh
+
+
+```
+
+
+```{r}
+#Walle
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### Depending on time: Questions from the handbook

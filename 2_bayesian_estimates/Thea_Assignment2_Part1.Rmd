@@ -1,7 +1,9 @@
 ---
 title: "Computational Modeling - Week 3 - Assignment 2 - Part 1"
 author: "Riccardo Fusaroli"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -31,6 +33,13 @@ Questions:
 #1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
 
 ```{r, include=FALSE}
+
+d <- data.frame(
+  Correct=c(3,2,160,66),
+  Questions=c(6,2,198,132),
+  Teacher=c("RF","KT","JS","MW"))
+
+
 # define grid
 grid <- seq( from=0 , to=1 , length.out=100)
 # define prior
@@ -194,7 +203,7 @@ mtext("Riccardo: 100 points")
 
 ```
 
-In percentages Riccardo and Mikkel answer roughly equally bad. However, since we have many more datapoints from Mikkel, as the posterior distribution shows, we can be much more certain in assessing Mikkel's CogSci knowdge. This is shown in the area under the curve being more narrow compared to Riccardo's.
+In percentages Riccardo and Mikkel answer roughly equally bad. However, since we have many more datapoints from Mikkel, as the posterior distribution shows, we can be much more certain in assessing Mikkel's CogSci knowledge. This is shown in the area under the curve being more narrow compared to Riccardo's.
 
 #Who's best?
 Assessing the posterior distribution, we are quite certrain that Josh's knowledge lays around 0.8, which is somewhat impressive. However, looking at Tylle's curve we are very uncertain - it could be 0.5, but also 1 (awesome).
@@ -205,7 +214,7 @@ Assessing the posterior distribution, we are quite certrain that Josh's knowledg
 3a. Produce plots of the prior and posterior for each teacher.
 
 ```{r, echo=TRUE}
-# new_prior <- dnorm(grid,0.8,0.2)
+new_prior <- dnorm(grid,0.8,0.2)
 # plot(new_prior)
 #plot of new prior
 
@@ -284,6 +293,8 @@ Yes, they change. At least for Tylle and Riccardo. We can see that the prior aff
 #4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
 
 ```{r, echo=TRUE}
+
+
 #multiply all data with 100
 new_d <- d*100
 new_d$Teacher <- d$Teacher
@@ -433,7 +444,7 @@ Make a prior of a normal distribution that peaks at 0.5 and with a quite small S
 stupid_prior <- dnorm(grid,0.5,0.1)
 
 new_Data=data.frame(grid=grid,posterior=posterior,prior=stupid_prior,likelihood=likelihood)
-ggplot(new_Data,aes(grid,posterior)) + geom_line(aes(grid,stupid_prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of new prior")
+ggplot(new_Data,aes(grid,posterior)) + geom_line(aes(grid,stupid_prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of stupid prior")
 
 
 # tylle
@@ -453,44 +464,4 @@ mtext("Tylle: 100 points")
 
 
 ```
-
-
-6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
-
-```{r}
-
-```
-
-
-7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
-```{r}
-library(pacman)
-p_load(brms)
-
-d <- data.frame(
-  Correct=c(3,2,160,66),
-  Questions=c(6,2,198,132),
-  Teacher=c("RF","KT","JS","MW"))
-
-d
-
-FlatModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("uniform(0,1)", class = "Intercept"),family=binomial)
-plot(FlatModel)
-
-PositiveModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.8,0.2)", class = "Intercept"),family=binomial)
-plot(PositiveModel)
-
-SkepticalModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.5,0.01)", class = "Intercept"),family=binomial)
-plot(SkepticalModel)
-```
-
-
-
-
-
-If you dare, try to tweak the data and model to test two hypotheses:
-- Is Kristian different from Josh?
-- Is Josh different from chance?
-
-
 

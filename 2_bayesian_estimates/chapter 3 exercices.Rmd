@@ -1,0 +1,65 @@
+---
+title: "questions chapter 3"
+author: "Thea Rolskov Sloth"
+date: "26/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- rep( 1 , 1000 )
+likelihood <- dbinom( 6 , size=9 , prob=p_grid )
+posterior <- likelihood * prior
+posterior <- posterior / sum(posterior)
+set.seed(100)
+samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
+
+
+#1
+sum(samples < 0.2) / 1e4
+mean(samples < 0.2) #same
+#adding up all the true's (1's)
+
+#2
+sum(samples > 0.8) / 1e4
+#probability of earth being covered by more than 80 % is 12% chance
+
+#3
+mean(samples > 0.2 & samples < 0.8)
+
+#4
+quantile(samples, 0.2)
+#0.51
+
+#5
+quantile(samples, 1 -0.2)
+#quantile function always starts from below
+#0.76
+
+#6
+library(rethinking)
+HPDI(samples, prob = 0.66)
+#     |0.66     0.66| 
+# 0.5225225 0.7957958 --> highest posterior density. Use this!!
+
+#7
+PI(samples, prob = 0.66)
+#central 66 % of the posterior
+#       17%       83% 
+# 0.4984985 0.7757758 
+
+
+dens(samples)
+simplehist(samples)
+```
+
+
+
+
+
+
