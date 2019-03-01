@@ -1,0 +1,286 @@
+---
+title: "Computational Modeling - Week 3 - Assignment 2 - Part 1"
+author: "Laurits Dixen"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE)
+
+library(rethinking)
+
+```
+
+## In this assignment we learn how to assess rates from a binomial distribution, using the case of assessing your teachers' knowledge of CogSci
+
+### First part
+
+You want to assess your teachers' knowledge of cognitive science. "These guys are a bunch of drama(turgist) queens, mindless philosophers, chattering communication people and Russian spies. Do they really know CogSci?", you think.
+
+To keep things simple (your teachers should not be faced with too complicated things):
+- You created a pool of equally challenging questions on CogSci
+- Each question can be answered correctly or not (we don't allow partially correct answers, to make our life simpler).
+- Knowledge of CogSci can be measured on a scale from 0 (negative knowledge, all answers wrong) through 0.5 (random chance) to 1 (awesome CogSci superpowers)
+
+This is the data:
+- Riccardo: 3 correct answers out of 6 questions
+- Kristian: 2 correct answers out of 2 questions (then he gets bored)
+- Josh: 160 correct answers out of 198 questions (Josh never gets bored)
+- Mikkel: 66 correct answers out of 132 questions
+
+Questions:
+
+1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
+
+Using grid estimation with a uniform prior we get the posterior distribution of Riccardo's knowledge. It shows a normal distribution with µ = 0.5, σ = 0.2. The Gaussian distribution is symmetrical around the mean, so we can conclude there is a 50% chance he knows more than chance. 
+```{r}
+# define grid
+p_grid <- seq(from=0, to=1, length.out=1000)
+# define prior
+prior <- rep(1,1000)
+# compute likelihood at each value in grid
+likelihood <- dbinom(3 , size=6 , prob=p_grid )
+# compute product of likelihood and prior
+unstd.posterior <- likelihood * prior
+# standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+plot( p_grid , posterior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Riccardo")
+
+HPDI(posterior)
+
+```
+
+With a quadratic approxiamtion, we get the same results as shown here. 
+```{r}
+globe.qa <- map(
+    alist(
+        w ~ dbinom(6,p) ,  # binomial likelihood
+        p ~ dunif(0,1)     # uniform prior
+), data=list(w=3) )
+# display summary of quadratic approximation
+precis( globe.qa )
+```
+
+
+2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+
+The posteriors of Riccardo and Mikkel give the same mean (0.5, because they answer half of the questions correctly). But Mikkel has answered many more questions, and that gives us a much more confident estimate of the parameter. This is shown as a very low σ (looking at the distribution close to 0.05, I guess).
+
+Who knows the most? Well, we can fairly confidently believe that Josh knows the correct answer to about 80% of the questions. Kristian has a very non-Gaussian posterior distribution having only answered correctly. Our best guess is that he answers 100% correct, but we are not very confident in our conclusion as he has only answered two questions. 
+
+2a. Produce plots of the prior, and posterior for each teacher.
+```{r}
+p_grid <- seq(from=0, to=1, length.out=1000)
+uni_prior <- rep(1,1000)
+
+## KRISTIAN
+
+likelihood_Kristian <- dbinom(2 , size=2 , prob=p_grid )
+unstd.posterior_Kristian <- likelihood_Kristian * prior
+posterior_Kristian <- unstd.posterior_Kristian / sum(unstd.posterior_Kristian)
+
+plot( p_grid , posterior_Kristian , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Kristian")
+
+### JOSH
+
+likelihood_Josh <- dbinom(160 , size=198 , prob=p_grid )
+unstd.posterior_Josh <- likelihood_Josh * prior
+posterior_Josh <- unstd.posterior_Josh / sum(unstd.posterior_Josh)
+
+plot( p_grid , posterior_Josh , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Josh")
+
+## MIKKEL
+
+likelihood_Mikkel <- dbinom(66 , size=132 , prob=p_grid )
+unstd.posterior_Mikkel <- likelihood_Mikkel * uni_prior
+posterior_Mikkel <- unstd.posterior_Mikkel / sum(unstd.posterior_Mikkel)
+
+plot( p_grid , posterior_Mikkel , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Mikkel")
+
+## Prior
+plot( p_grid , uni_prior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="prior probability" , main = "All teachers")
+
+```
+
+3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
+
+3a. Produce plots of the prior and posterior for each teacher.
+```{r}
+p_grid <- seq(from=0, to=1, length.out=1000)
+better_prior <- dnorm(p_grid, mean = 0.8, sd = 0.2)
+
+get_posterior <- function(prior, data) {
+  likelihood <- dbinom(data[1] , size=data[2] , prob=p_grid )
+  unstd.posterior <- likelihood * prior
+  posterior <- unstd.posterior / sum(unstd.posterior)
+  return(posterior)
+}
+
+### RICCARDO
+
+posterior_Riccardo_better = get_posterior(better_prior, c(3,6))
+
+plot( p_grid , posterior_Riccardo_better , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Riccardo")
+
+
+### KRISTIAN
+posterior_Kristian_better = get_posterior(better_prior, c(2,2))
+
+plot( p_grid , posterior_Kristian_better , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Kristian")
+
+### JOSH
+
+posterior_Josh_better = get_posterior(better_prior, c(160,198))
+
+plot( p_grid , posterior_Josh_better , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Josh")
+
+## MIKKEL
+posterior_Mikkel_better = get_posterior(better_prior, c(66,132))
+
+plot( p_grid , posterior_Mikkel_better , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Mikkel")
+
+## Prior
+plot( p_grid , better_prior , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="prior probability" , main = "All teachers")
+```
+
+Teachers with many questions answered (Mikkel and Josh) are not effected very much by the new prior. However, Riccardo's posterior has now been moved higher up the x-axis, giving a higher mean but similar standard deviation. Kristian now has a Gaussian posterior distribution, thanks to the Gaussian prior. His mean has been moved a little higher than the prior's 0.8 to about 0.9, but not higher as he only answered 2 questions. 
+
+
+
+4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
+
+
+```{r}
+p_grid <- seq(from=0, to=1, length.out=1000)
+
+gaus_prior <- dnorm(p_grid, mean = 0.8, sd = 0.2)
+uni_prior <- rep(1,1000)
+
+get_posterior <- function(prior, data) {
+  likelihood <- dbinom(data[1] , size=data[2] , prob=p_grid )
+  unstd.posterior <- likelihood * prior
+  posterior <- unstd.posterior / sum(unstd.posterior)
+  return(posterior)
+}
+
+get_all_posteriors <- function(data,name) {
+  posterior_uni <- get_posterior(uni_prior,c(data[1],data[2]))
+  posterior_gaus <- get_posterior(gaus_prior,c(data[1],data[2]))
+  posterior_more_uni <- get_posterior(uni_prior,c(data[1]*100,data[2]*100))
+  posterior_more_gaus <- get_posterior(gaus_prior,c(data[1]*100,data[2]*100))
+  
+  val = max(c(posterior_uni,posterior_gaus,posterior_more_uni,posterior_more_gaus))
+  
+  plot(p_grid , posterior_more_gaus , col = "black", type = "l", lty = 1,
+     xlab="Knowledge of CogSci" , ylab="posterior probability" , main = name)
+  lines(p_grid,posterior_more_uni, col = "red", lty = 2)
+  lines(p_grid,posterior_gaus, col = "blue", lty = 3)
+  lines(p_grid,posterior_uni, col = "green", lty = 4)
+  legend(0, y=val, legend = c("Gaussian prior - more data", "uniform prior - more data", "Gaussian prior - less data", "uniform prior - less data"), col = c("black","red","blue","green"), lty = 1:4)
+}
+
+### RICCARDO
+get_all_posteriors(c(3,6),"Riccardo")
+
+### KRISTIAN
+get_all_posteriors(c(2,2),"Kristian")
+
+### JOSH
+get_all_posteriors(c(160,198),"Josh")
+
+## MIKKEL
+get_all_posteriors(c(66,132),"Mikkel")
+
+```
+
+Here I have plotted the four possibilities for posterior distributions: more/less data uniform/Gaussian prior.
+The results are fairly consistent across teachers. Regardless of prior the distributions with more data show very similar form, showing that the prior does not matter much, when you have much data. The best estimate does not change much (if at all) for any of the teachers, but we get much more confident (given a much lower standard deviation). The case of Kristian is a little special, because 200/200 is so strong evidence that the curve is almost vertical at close to 1. 
+
+
+5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
+
+If we do not think the teachers know anything about CogSci, we could set their priors to favour much lower scores. Previously, we have used a prior that allowed for knowledge below 0.5. If the questions are given as a multiple choice with two choices (we do not know that, but it seems likely), we would expect 0 knowledge of CogSci to produce 0.5 accuracy. But we can presume the questions are given with no options to choose from, which would give us possible values from 0 to 1. 
+
+A possible skeptical prior could be a normal distribution with very low mean. If we really believed they did not know anything, and it was very difficult to guess correct answers, we could set the mean to 0. The standard deviation is relfecting how certain we are, that the teachers do not know much, and therefore how much data we need to be convinced that they actually know something. No matter how low we set the SD, there should be some amount data that would convince us to change our belief, so it does not matter too much what it is. We could set the prior as a Gaussian distribution with µ = 0.0, σ = 0.2.
+
+```{r, include=FALSE}
+skep_prior <- dnorm(p_grid, mean = 0.0, sd = 0.2)
+
+a <- get_posterior(skep_prior, c(160,320))
+
+plot( p_grid , a , type="b" ,
+    xlab="Knowledge of CogSci" , ylab="posterior probability" , main = "Riccardo")
+
+```
+
+
+6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
+
+I have made a very loose Gaussian distribution as a prior, as I do not know much about the test. It is almost uniform, but with a bias against extreme results. It is a Gaussian distribution with µ = 0.5, σ = 0.5 and shown in the plot. 
+
+I then sample the parameter estimates with posterior distribution for each teacer. Subtracting Riccardo's samples from another teacher and taking the median of that, will give me the an estimate of the difference between the teachers's parameters. By taking the median, I know that half of the sampled values showed a bigger difference than the reported value. "median(Jsamples - Rsamples)"
+If I just wanted to know whether Riccardo better or worse than another teacher I can take the count the number of samples Riccardo's estimate is better/worse. "mean(Jsamples - Rsamples > 0)". This gives me the probability of Riccardo being better/worse than that teacher at CogSci knowledge. 
+
+Here is my results:
+Josh has 30.4% higher accuracy and has 97.2% probability of being higher than Riccardo.
+Kristian has 24.3% higher accuracy but only has 81.2% probability of being higher than Riccardo.
+The difference between Mikkel and Riccardo is very small (mean < 0.001) and has a median of 0. The probability of Mikkel being more knowledgable than Riccardo is 0.50%, which of course expresses no difference between them. 
+
+
+```{r}
+dumb_prior <- dnorm(p_grid, 0.5, 0.5)
+
+plot(p_grid,dumb_prior, main = "Prior")
+
+R <- get_posterior(dumb_prior, c(3,6))
+J <- get_posterior(dumb_prior, c(160,198))
+K <- get_posterior(dumb_prior, c(2,2))
+M <- get_posterior(dumb_prior, c(66,132))
+
+Rsamples <- sample(p_grid, prob=R, size=1e5, replace=TRUE)
+Jsamples <- sample(p_grid, prob=J, size=1e5, replace=TRUE)
+Ksamples <- sample(p_grid, prob=K, size=1e5, replace=TRUE)
+Msamples <- sample(p_grid, prob=M, size=1e5, replace=TRUE)
+
+#median(Msamples - Rsamples)
+
+#mean(Msamples - Rsamples > 0)
+
+```
+
+
+
+7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
+```{r}
+# library(brms)
+# d <- data.frame(
+#   Correct=c(3,2,160,66),
+#   Questions=c(6,2,198,132),
+#   Teacher=c("RF","KT","JS","MW"))
+# 
+# FlatModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("uniform(0,1)", class = "Intercept"),family=binomial)
+# plot(FlatModel)
+# PositiveModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.8,0.2)", class = "Intercept"),family=binomial)
+# plot(PositiveModel)
+# SkepticalModel <- brm(Correct|trials(Questions)~1,data=subset(d,Teacher=="RF"),prior=prior("normal(0.5,0.01)", class = "Intercept"),family=binomial)
+# plot(SkepticalModel)
+```
+
+If you dare, try to tweak the data and model to test two hypotheses:
+- Is Kristian different from Josh?
+- Is Josh different from chance?
+
+
+
