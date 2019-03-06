@@ -67,62 +67,162 @@ Autism cannot be negative
 
 Make prior predictive plot --> run the model without the likelyhood (data) --> called a prior predictive check 
 
+
 ```{r}
 #make prior predictive check --> run the model without the likelyhood (data)
 
 #Define the model
 m_verbal <- bf(ADOS ~ 1 + VerbalIQ_c)
 
-# Ask which priors need to be defined, but we might do it in a different way 
+# Ask which priors need to be defined, but I'm not going to use it  
 get_prior(m_verbal, data = asd_2, family = gaussian)
 
 # Define the prior
 #intecept is the ados you have if you are average in verbal iq
-prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(0,10), class = "b") , prior(normal(0,5), class = "sigma"))
+prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(-5,5), class = "b") , prior(normal(0,5), class = "sigma"))
 
-# Draw the consequences of priors AND likelihood (why AND?)
+# Draw the consequences of priors 
 m_verbal_prior <- brm(m_verbal, asd_2, prior = prior, sample_prior = "only")
 # Prior Predictive Check
 pp_check(m_verbal_prior)
-# Repeat until you are satisfied# Prior-hacking?
+# Repeat until you are satisfied
 
 ```
 
-
-
-
 ```{r}
+#VERBAL_IQ
 
 #define the model
-flist <- alist(
+flist_verbal <- alist(
   ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*VerbalIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( 0 , 10 ) ,
-        sigma ~ dunif( 0 , 50 )
+        b ~ dnorm( -5 , 5 ) ,
+        sigma ~ dnorm( 0 , 5 )
 )
 
 
 #fit the model to the data
-m1.1 <- map(flist, data = asd_2)
+m1.1 <- map(flist_verbal, data = asd_2)
 
 
 #look at the fit maximum of the model
-precis(m1.1)
+m1.1_estimates <- precis(m1.1)
 
 
 ```
 
 
+```{r}
+#NONVERBAL_IQ
+
+#define the model
+flist_nonverbal <- alist(
+  ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + b*NonVerbalIQ_c ,
+        a ~ dnorm( 12 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
+        sigma ~ dnorm( 0 , 5 )
+)
+
+
+#fit the model to the data
+m1.2 <- map(flist_nonverbal, data = asd_2)
+
+
+#look at the fit maximum of the model
+m1.2_estimates <- precis(m1.2)
+```
+
+```{r}
+#SOCIAL_IQ
+
+#define the model
+flist_social <- alist(
+  ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + b*SocialIQ_c ,
+        a ~ dnorm( 12 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
+        sigma ~ dnorm( 0 , 5 )
+)
+
+
+#fit the model to the data
+m1.3 <- map(flist_social, data = asd_2)
+
+
+#look at the fit maximum of the model
+m1.3_estimates <- precis(m1.3)
+```
+
+
+ROBUSTNESS CHECK
+
+We tried with different values for mean alpha and mean beta. 
+
+```{r}
+
+#define the model
+flist_prior_check_1.1 <- alist(
+  ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + b*SocialIQ_c ,
+        a ~ dnorm( 5 , 5 ) ,
+        b ~ dnorm(-20, 5 ) ,
+        sigma ~ dnorm( 0 , 5 )
+)
+
+
+#fit the model to the data
+check_1.1 <- map(flist_prior_check_1.1, data = asd_2)
+
+
+#look at the fit maximum of the model
+precis(check_1.1)
+
+
+```
+
+
+
+
 2. Do the different aspects of IQ account for different portions of the variance in ADOS? 
+
+
 2.1. Does it make sense to have all IQ measures in the same model? First write a few lines answering the question and motivating your answer, including a discussion as to what happens when you put all of them in the same model. Then build a model following your answer. If your answer is "no", you are not free, you still have to answer: are there alternative ways of answering the question?
+
+It could make sense if they do not correlate too much. Use chapter 5 about multivariate models to assess whether they correlate. Non-verbal_IQ and social_IQ could potentially explain different variance in the data. 
+
+
+
 2.2. Build the model, assess its quality, write a few lines interpreting the results.
+
+Look at table of estimates and posterior distribution. 
+
+Assess it's quality: Create predictive posteiror plot and look at error or make shaded areas around model and data 
+
+
 
 3. Let's now include also the TD children. Does it make sense to ask whether IQ and ADOS are related? Motivate your answer. In any case, if you wanted to build a model to answer that question, which model would you build? Run the model, assess its quality, write a few lines interpreting the results.
 
+
+
+
+Would maybe be better to create a model with asd predicted by verbal_iq. 
+
+
+
 4. Let's discuss contents:
+
+
+
 4.1. You have three scores for IQ, do they show shared variance? Is that the same in TD and ASD? What does that tell us about IQ?
+
+
+
 4.2. You have explored the relation between IQ and ADOS. How do you explain that relation from a cognitive perspective? N.B. You can present alternative hypotheses.
+
+
+
 
 5. Bonus questions: Including measurement errors. 
 5.1. Let's assume that ADOS has a measurement error of 1. How would you model that in any of the previous models? 
