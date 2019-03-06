@@ -51,13 +51,17 @@ checkWithPred <- function(oldData, newData) {
   data <- rep(newData[1],1e4)
   error = predictions-data
   normalizedError = error/newData[2]
-  dens(normalizedError)
+  normalizedError= round(normalizedError, digits= 3)
+  simplehist(normalizedError, round=0.1)
+  #dens(normalizedError)
   cat(HPDI(normalizedError, prob = 0.97))
   return(error)
 }
 
 Riccardo_error = checkWithPred(oldData = c(3,6), newData = c(9,10)) + mtext("Error plot for Riccardo's knowledge")
 Kristian_error = checkWithPred(c(2,2),c(8,12)) + mtext("Error plot for Kristian's knowledge")
+round()
+title(xlab=c(1,1,1))
 Josh_error = checkWithPred(c(160,198),c(148,172)) + mtext("Error plot for Josh's knowledge")
 Mikkel_error = checkWithPred(c(66,132),c(34,65)) + mtext("Error plot for Mikkel's knowledge")
 
