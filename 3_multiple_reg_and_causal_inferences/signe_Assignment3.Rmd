@@ -33,6 +33,10 @@ asd <- read.csv("Assignment3Data.csv")
 #only use visit 1
 asd_2 <- asd[ asd$Visit <= 1 , ]
 
+#only use children with asd
+asd_2 <- asd_2[ asd_2$ASD >= 1 , ]
+
+
 #remove child with ID 1, because it contain NA values
 asd_2 <- asd_2[ asd_2$ChildID >= 2 , ]
 
@@ -74,10 +78,9 @@ get_prior(m_verbal, data = asd_2, family = gaussian)
 
 # Define the prior
 #intecept is the ados you have if you are average in verbal iq
-prior = c(prior(normal(0,5), class = "Intercept"), prior(normal(0,10), class = "b") , prior(normal(0,15), class = "sigma"))
+prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(0,10), class = "b") , prior(normal(0,5), class = "sigma"))
 
 # Draw the consequences of priors AND likelihood (why AND?)
-
 m_verbal_prior <- brm(m_verbal, asd_2, prior = prior, sample_prior = "only")
 # Prior Predictive Check
 pp_check(m_verbal_prior)
