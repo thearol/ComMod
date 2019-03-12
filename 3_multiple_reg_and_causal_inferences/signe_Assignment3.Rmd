@@ -71,6 +71,8 @@ Make prior predictive plot --> run the model without the likelyhood (data) --> c
 ```{r}
 #make prior predictive check --> run the model without the likelyhood (data)
 
+library(brms)
+
 #Define the model
 m_verbal <- bf(ADOS ~ 1 + VerbalIQ_c)
 
@@ -112,6 +114,37 @@ m1.1_estimates <- precis(m1.1)
 
 ```
 
+```{r}
+#plot model of verbal_iq
+
+# define sequence of verbaliq to compute predictions for
+# these values will be on the horizontal axis
+verbal.seq <- seq( from=-3 , to=3 , by=1 )
+
+#summarise distribution of mu
+
+mu <- link (m1.1, data = data.frame(VerbalIQ_c = verbal.seq))
+
+
+# summarize the distribution of mu
+mu.mean <- apply( mu , 2 , mean )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 )
+
+#simulate ADOS
+sim.ADOS <- sim(m1.1, data = list(VerbalIQ_c = verbal.seq))
+ADOS.PI <- apply(sim.ADOS, 2, PI, prob = 0.89)
+
+# plot raw data
+plot( ADOS ~ VerbalIQ_c , asd_2 , col=col.alpha(rangi2,0.5) )
+# draw MAP line
+lines( verbal.seq , mu.mean )
+# draw HPDI region for line
+shade( mu.HPDI , verbal.seq )
+# draw PI region for simulated heights
+shade( ADOS.PI , verbal.seq )
+```
+
+
 
 ```{r}
 #NONVERBAL_IQ
@@ -121,7 +154,7 @@ flist_nonverbal <- alist(
   ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*NonVerbalIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( -5 , 5 ) ,
+        b ~ dnorm( 0 , 5 ) ,
         sigma ~ dnorm( 0 , 5 )
 )
 
@@ -135,6 +168,39 @@ m1.2_estimates <- precis(m1.2)
 ```
 
 ```{r}
+#plot model of nonverbal_iq
+
+# define sequence of nonverbaliq to compute predictions for
+# these values will be on the horizontal axis
+nonverbal.seq <- seq( from=-3 , to=3 , by=1 )
+
+#summarise distribution of mu
+
+mu <- link (m1.2, data = data.frame(NonVerbalIQ_c = nonverbal.seq))
+
+
+# summarize the distribution of mu
+mu.mean <- apply( mu , 2 , mean )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 )
+
+#simulate ADOS
+sim.ADOS <- sim(m1.2, data = list(NonVerbalIQ_c = nonverbal.seq))
+ADOS.PI <- apply(sim.ADOS, 2, PI, prob = 0.89)
+
+# plot raw data
+plot( ADOS ~ NonVerbalIQ_c , asd_2 , col=col.alpha(rangi2,0.5) )
+# draw MAP line
+lines( nonverbal.seq , mu.mean )
+# draw HPDI region for line
+shade( mu.HPDI , nonverbal.seq )
+# draw PI region for simulated heights
+shade( ADOS.PI , nonverbal.seq )
+```
+
+
+
+
+```{r}
 #SOCIAL_IQ
 
 #define the model
@@ -142,7 +208,7 @@ flist_social <- alist(
   ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*SocialIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( -5 , 5 ) ,
+        b ~ dnorm( 0 , 5 ) ,
         sigma ~ dnorm( 0 , 5 )
 )
 
@@ -153,6 +219,44 @@ m1.3 <- map(flist_social, data = asd_2)
 
 #look at the fit maximum of the model
 m1.3_estimates <- precis(m1.3)
+```
+
+
+```{r}
+#social_IQ
+
+
+# define sequence of nonverbaliq to compute predictions for
+# these values will be on the horizontal axis
+social.seq <- seq( from=-3 , to=3 , by=1 )
+
+#summarise distribution of mu
+
+mu <- link (m1.3, data = data.frame(SocialIQ_c = social.seq))
+
+
+# summarize the distribution of mu
+mu.mean <- apply( mu , 2 , mean )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 )
+
+#simulate ADOS
+sim.ADOS <- sim(m1.3, data = list(SocialIQ_c = social.seq))
+ADOS.PI <- apply(sim.ADOS, 2, PI, prob = 0.89)
+
+# plot raw data
+plot( ADOS ~ SocialIQ_c , asd_2 , col=col.alpha(rangi2,0.5) )
+# draw MAP line
+lines( social.seq , mu.mean )
+# draw HPDI region for line
+shade( mu.HPDI , social.seq )
+# draw PI region for simulated heights
+shade( ADOS.PI , social.seq )
+
+
+
+
+
+
 ```
 
 
@@ -192,6 +296,45 @@ precis(check_1.1)
 
 It could make sense if they do not correlate too much. Use chapter 5 about multivariate models to assess whether they correlate. Non-verbal_IQ and social_IQ could potentially explain different variance in the data. 
 
+The first thing we will do is to check whether the IQ measures correlate. 
+
+```{r}
+#Create model with all predictors
+
+#define the model
+flist_full <- alist(
+  ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + bs*SocialIQ_c + bn*NonVerbalIQ_c + bv*VerbalIQ_c ,
+        a ~ dnorm( 5 , 5 ) ,
+        bs ~ dnorm(0, 5 ) ,
+        bn ~ dnorm(0,5),
+        bv ~ dnorm(0,5),
+        sigma ~ dnorm( 0 , 5 )
+)
+
+
+#fit the model to the data
+m.full <- map(flist_full, data = asd_2)
+
+pairs(~ VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c, 
+      data = asd_2, col = rangi2)
+```
+```{r}
+cor(asd_2$VerbalIQ_c, asd_2$NonVerbalIQ_c)
+
+cor(asd_2$VerbalIQ_c, asd_2$SocialIQ_c)
+
+cor(asd_2$NonVerbalIQ_c, asd_2$SocialIQ_c)
+
+
+```
+
+After checking the pairs plot and the estimated correlation between the predictor variable, we can see that verbal and nonverbal iq is correlated by 0.68 and with social iq by 0.61. This we will keep in mind as we procede keeping all the variables as predictors in the model. 
+
+```{r}
+precis(m.full)
+```
+
 
 
 2.2. Build the model, assess its quality, write a few lines interpreting the results.
@@ -199,6 +342,77 @@ It could make sense if they do not correlate too much. Use chapter 5 about multi
 Look at table of estimates and posterior distribution. 
 
 Assess it's quality: Create predictive posteiror plot and look at error or make shaded areas around model and data 
+
+Now we want to plot the predictor residual plots
+
+
+```{r}
+#compute the residuals
+
+#create model investigating verbal 
+#define the model
+flist_verbal <- alist(
+  VerbalIQ_c ~ dnorm( mu , sigma ) ,
+        mu <- a + bs*SocialIQ_c + bn*NonVerbalIQ_c,
+        a ~ dnorm( 5 , 5 ) ,
+        bs ~ dnorm(0, 5 ) ,
+        bn ~ dnorm(0,5),
+        sigma ~ dnorm( 0 , 5 )
+)
+
+
+#fit the model to the data
+m.verbal <- map(flist_verbal, data = asd_2)
+
+
+# compute expected value at MAP, for each State
+mu <- coef(m.verbal)['a'] + coef(m.verbal)['bs']*asd_2$SocialIQ_c + coef(m.verbal)['bn']*asd_2$NonVerbalIQ_c
+# compute residual for each State
+m.resid <- asd_2$VerbalIQ_c - mu
+
+
+
+```
+
+```{r}
+#plot the residual
+plot(x = m.resid, y = asd_2$ADOS)
+```
+
+
+
+```{r}
+#compute the residuals
+
+#create model investigating nonverbal 
+#define the model
+flist_nonverbal <- alist(
+  NonVerbalIQ_c ~ dnorm( mu , sigma ) ,
+        mu <- a + bs*SocialIQ_c + bv*VerbalIQ_c,
+        a ~ dnorm( 5 , 5 ) ,
+        bs ~ dnorm(0, 5 ) ,
+        bv ~ dnorm(0,5),
+        sigma ~ dnorm( 0 , 5 )
+)
+
+
+#fit the model to the data
+m.nonverbal <- map(flist_nonverbal, data = asd_2)
+
+
+# compute expected value at MAP, for each State
+mu <- coef(m.nonverbal)['a'] + coef(m.nonverbal)['bs']*asd_2$SocialIQ_c + coef(m.nonverbal)['bv']*asd_2$VerbalIQ_c
+# compute residual for each State
+m.resid <- asd_2$NonVerbalIQ_c - mu
+
+
+
+```
+
+```{r}
+#plot the residual
+plot(x = m.resid, y = asd_2$ADOS)
+```
 
 
 
