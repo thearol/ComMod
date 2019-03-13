@@ -91,9 +91,6 @@ fitted(post_verb, newdata = nd) %>%
   theme(panel.grid = element_blank())+
   geom_point(data = asd1) 
 
-library(ggrepel)
-??Loc
-
 fitted(post_verb) %>%
   as_tibble() %>%
   bind_cols(asd1) %>%
@@ -107,9 +104,9 @@ fitted(post_verb) %>%
                      ymax = Estimate + Est.Error),
                  size = 1/2, color = "firebrick4") +
   # Note our use of the dot placeholder, here: https://magrittr.tidyverse.org/reference/pipe.html
-  geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
-            aes(label = Loc), 
-            hjust = 0, nudge_x = - 0.65) +
+  # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
+            # aes(label = Loc), 
+            #hjust = 0, nudge_x = - 0.65) +
   labs(x = "Observed ADOS", y = "Predicted ADOS") +
   theme_bw() +
   theme(panel.grid = element_blank())
@@ -162,11 +159,11 @@ fitted(post_nonverb, newdata = nd) %>%
   theme(panel.grid = element_blank())+
   geom_point(data = asd1) 
 
-fitted(b5.3) %>%
+fitted(post_nonverb) %>%
   as_tibble() %>%
-  bind_cols(d) %>%
+  bind_cols(asd1) %>%
   
-  ggplot(aes(x = Divorce, y = Estimate)) +
+  ggplot(aes(x = ADOS, y = Estimate)) +
   geom_abline(linetype = 2, color = "grey50", size = .5) +
   geom_point(size = 1.5, color = "firebrick4", alpha = 3/4) +
   geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
@@ -175,10 +172,10 @@ fitted(b5.3) %>%
                      ymax = Estimate + Est.Error),
                  size = 1/2, color = "firebrick4") +
   # Note our use of the dot placeholder, here: https://magrittr.tidyverse.org/reference/pipe.html
-  geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
-            aes(label = Loc), 
-            hjust = 0, nudge_x = - 0.65) +
-  labs(x = "Observed divorce", y = "Predicted divorce") +
+  # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
+            # aes(label = Loc), 
+            #hjust = 0, nudge_x = - 0.65) +
+  labs(x = "Observed ADOS", y = "Predicted ADOS") +
   theme_bw() +
   theme(panel.grid = element_blank())
 ```
@@ -230,11 +227,11 @@ fitted(post_social, newdata = nd) %>%
   theme(panel.grid = element_blank())+
   geom_point(data = asd1) 
 
-fitted(b5.3) %>%
+fitted(post_social) %>%
   as_tibble() %>%
-  bind_cols(d) %>%
+  bind_cols(asd1) %>%
   
-  ggplot(aes(x = Divorce, y = Estimate)) +
+  ggplot(aes(x = ADOS, y = Estimate)) +
   geom_abline(linetype = 2, color = "grey50", size = .5) +
   geom_point(size = 1.5, color = "firebrick4", alpha = 3/4) +
   geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
@@ -243,10 +240,10 @@ fitted(b5.3) %>%
                      ymax = Estimate + Est.Error),
                  size = 1/2, color = "firebrick4") +
   # Note our use of the dot placeholder, here: https://magrittr.tidyverse.org/reference/pipe.html
-  geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
-            aes(label = Loc), 
-            hjust = 0, nudge_x = - 0.65) +
-  labs(x = "Observed divorce", y = "Predicted divorce") +
+  # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
+            # aes(label = Loc), 
+            #hjust = 0, nudge_x = - 0.65) +
+  labs(x = "Observed ADOS", y = "Predicted ADOS") +
   theme_bw() +
   theme(panel.grid = element_blank())
 
