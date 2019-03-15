@@ -466,7 +466,24 @@ plot(x = m.resid_social, y = asd_2$ADOS)
 ```
 
 
+```{r residuals ggplot}
 
+residuals <- data.frame(ADOS = asd_2$ADOS,
+                        VerbalResiduals = m.resid_verbal,
+                        nonVerbalResiduals = m.resid_nonverbal,
+                        SocialResiduals = m.resid_social
+                        )
+
+
+v <- ggplot(residuals, aes(VerbalResiduals, ADOS))
+n <- ggplot(residuals, aes(nonVerbalResiduals, ADOS))
+s <- ggplot(residuals, aes(SocialResiduals, ADOS))
+
+v +  geom_smooth(method = lm) + geom_point()
+n +  geom_smooth(method = lm) + geom_point()
+s +  geom_smooth(method = lm) + geom_point()
+
+```
 
 ```{r}
 #COunterfactual plot showing the impact of changes in Social IQ 
