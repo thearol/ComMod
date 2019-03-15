@@ -87,6 +87,7 @@ prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(-5,5), class = 
 m_verbal_prior <- brm(m_verbal, asd_2, prior = prior, sample_prior = "only")
 # Prior Predictive Check
 pp_check(m_verbal_prior)
+labels()
 # Repeat until you are satisfied
 
 ```
@@ -94,18 +95,19 @@ pp_check(m_verbal_prior)
 ```{r}
 #VERBAL_IQ
 
-#define the model
-flist_verbal <- alist(
-  ADOS ~ dnorm( mu , sigma ) ,
+library(rethinking)
+
+
+m1.1 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*VerbalIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
         b ~ dnorm( -5 , 5 ) ,
-        sigma ~ dnorm( 0 , 5 )
-)
+        sigma ~ dunif( 0 , 5 ) ),
+data = asd_2 )
 
-
-#fit the model to the data
-m1.1 <- map(flist_verbal, data = asd_2)
+precis(m1.1)
 
 
 #look at the fit maximum of the model
@@ -149,18 +151,15 @@ shade( ADOS.PI , verbal.seq )
 ```{r}
 #NONVERBAL_IQ
 
-#define the model
-flist_nonverbal <- alist(
-  ADOS ~ dnorm( mu , sigma ) ,
+m1.2 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*NonVerbalIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( 0 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
         sigma ~ dnorm( 0 , 5 )
-)
+), data = asd_2 )
 
-
-#fit the model to the data
-m1.2 <- map(flist_nonverbal, data = asd_2)
 
 
 #look at the fit maximum of the model
@@ -203,18 +202,16 @@ shade( ADOS.PI , nonverbal.seq )
 ```{r}
 #SOCIAL_IQ
 
-#define the model
-flist_social <- alist(
-  ADOS ~ dnorm( mu , sigma ) ,
+m1.3 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*SocialIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( 0 , 5 ) ,
-        sigma ~ dnorm( 0 , 5 )
-)
+        b ~ dnorm( -5 , 5 ) ,
+sigma ~ dunif( 0 , 5 ) ),
+data = asd_2)
 
 
-#fit the model to the data
-m1.3 <- map(flist_social, data = asd_2)
 
 
 #look at the fit maximum of the model
@@ -301,24 +298,27 @@ The first thing we will do is to check whether the IQ measures correlate.
 ```{r}
 #Create model with all predictors
 
-#define the model
-flist_full <- alist(
-  ADOS ~ dnorm( mu , sigma ) ,
+
+m1.4 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + bs*SocialIQ_c + bn*NonVerbalIQ_c + bv*VerbalIQ_c ,
-        a ~ dnorm( 5 , 5 ) ,
+        a ~ dnorm( 8 , 5 ) ,
         bs ~ dnorm(0, 5 ) ,
         bn ~ dnorm(0,5),
         bv ~ dnorm(0,5),
         sigma ~ dnorm( 0 , 5 )
-)
+), data = asd_2)
 
 
-#fit the model to the data
-m.full <- map(flist_full, data = asd_2)
 
-pairs(~ VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c, 
+pairs(~  ADOS + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c, 
       data = asd_2, col = rangi2)
 ```
+
+
+
+
 ```{r}
 cor(asd_2$VerbalIQ_c, asd_2$NonVerbalIQ_c)
 
@@ -332,7 +332,7 @@ cor(asd_2$NonVerbalIQ_c, asd_2$SocialIQ_c)
 After checking the pairs plot and the estimated correlation between the predictor variable, we can see that verbal and nonverbal iq is correlated by 0.68 and with social iq by 0.61. This we will keep in mind as we procede keeping all the variables as predictors in the model. 
 
 ```{r}
-precis(m.full)
+precis(m1.4)
 ```
 
 
@@ -349,26 +349,28 @@ Now we want to plot the predictor residual plots
 ```{r}
 #compute the residuals
 
+#we have standarddized the IQ measures, so we expect alpha to be around 0 
+
 #create model investigating verbal 
 #define the model
-flist_verbal <- alist(
-  VerbalIQ_c ~ dnorm( mu , sigma ) ,
+
+m1.5 <- rethinking::map(
+    alist(
+        VerbalIQ_c ~ dnorm( mu , sigma ) ,
         mu <- a + bs*SocialIQ_c + bn*NonVerbalIQ_c,
-        a ~ dnorm( 5 , 5 ) ,
+        a ~ dnorm( 0, 5 ) ,
         bs ~ dnorm(0, 5 ) ,
         bn ~ dnorm(0,5),
         sigma ~ dnorm( 0 , 5 )
-)
+), data = asd_2)
 
 
-#fit the model to the data
-m.verbal <- map(flist_verbal, data = asd_2)
 
 
 # compute expected value at MAP, for each State
-mu <- coef(m.verbal)['a'] + coef(m.verbal)['bs']*asd_2$SocialIQ_c + coef(m.verbal)['bn']*asd_2$NonVerbalIQ_c
+mu_verbal <- coef(m1.5)['a'] + coef(m1.5)['bs']*asd_2$SocialIQ_c + coef(m1.5)['bn']*asd_2$NonVerbalIQ_c
 # compute residual for each State
-m.resid <- asd_2$VerbalIQ_c - mu
+m.resid_verbal <- asd_2$VerbalIQ_c - mu_verbal
 
 
 
@@ -376,7 +378,7 @@ m.resid <- asd_2$VerbalIQ_c - mu
 
 ```{r}
 #plot the residual
-plot(x = m.resid, y = asd_2$ADOS)
+plot(x = m.resid_verbal, y = asd_2$ADOS)
 ```
 
 
@@ -386,38 +388,200 @@ plot(x = m.resid, y = asd_2$ADOS)
 
 #create model investigating nonverbal 
 #define the model
-flist_nonverbal <- alist(
-  NonVerbalIQ_c ~ dnorm( mu , sigma ) ,
+
+m1.6 <- rethinking::map(
+    alist(
+        NonVerbalIQ_c ~ dnorm( mu , sigma ) ,
         mu <- a + bs*SocialIQ_c + bv*VerbalIQ_c,
-        a ~ dnorm( 5 , 5 ) ,
+        a ~ dnorm( 0 , 5 ) ,
         bs ~ dnorm(0, 5 ) ,
         bv ~ dnorm(0,5),
         sigma ~ dnorm( 0 , 5 )
-)
-
-
-#fit the model to the data
-m.nonverbal <- map(flist_nonverbal, data = asd_2)
+), data = asd_2)
 
 
 # compute expected value at MAP, for each State
-mu <- coef(m.nonverbal)['a'] + coef(m.nonverbal)['bs']*asd_2$SocialIQ_c + coef(m.nonverbal)['bv']*asd_2$VerbalIQ_c
+mu_nonverbal <- coef(m1.6)['a'] + coef(m1.6)['bs']*asd_2$SocialIQ_c + coef(m1.6)['bv']*asd_2$VerbalIQ_c
 # compute residual for each State
-m.resid <- asd_2$NonVerbalIQ_c - mu
+m.resid_nonverbal <- asd_2$NonVerbalIQ_c - mu_nonverbal
 
 
 
 ```
+
 
 ```{r}
 #plot the residual
-plot(x = m.resid, y = asd_2$ADOS)
+plot(x = m.resid_nonverbal, y = asd_2$ADOS)
 ```
+
+```{r}
+#compute the residuals
+
+#create model investigating social IQ 
+#define the model
+
+m1.7 <- rethinking::map(
+    alist(
+        SocialIQ_c ~ dnorm( mu , sigma ) ,
+        mu <- a + bn*NonVerbalIQ_c + bv*VerbalIQ_c,
+        a ~ dnorm( 0 , 5 ) ,
+        bn ~ dnorm(0, 5 ) ,
+        bv ~ dnorm(0,5),
+        sigma ~ dnorm( 0 , 5 )
+), data = asd_2)
+
+
+# compute expected value at MAP, for each State
+mu_social <- coef(m1.7)['a'] + coef(m1.7)['bn']*asd_2$NonVerbalIQ_c + coef(m1.7)['bv']*asd_2$VerbalIQ_c
+# compute residual for each State
+m.resid_social <- asd_2$NonVerbalIQ_c - mu_social
+
+
+
+```
+
+
+```{r}
+#plot the residual
+plot(x = m.resid_social, y = asd_2$ADOS)
+```
+
+
+
+
+```{r}
+#COunterfactual plot showing the impact of changes in Social IQ 
+
+
+# prepare new counterfactual data
+A.avg <- mean( d$MedianAgeMarriage.s )
+R.seq <- seq( from=-3 , to=3 , length.out=30 )
+pred.data <- data.frame(
+    Marriage.s=R.seq,
+    MedianAgeMarriage.s=A.avg
+)
+# compute counterfactual mean divorce (mu)
+mu <- link( m5.3 , data=pred.data )
+mu.mean <- apply( mu , 2 , mean )
+mu.PI <- apply( mu , 2 , PI )
+# simulate counterfactual divorce outcomes
+R.sim <- sim( m5.3 , data=pred.data , n=1e4 )
+
+R.PI <- apply( R.sim , 2 , PI )
+# display predictions, hiding raw data with type="n"
+plot( Divorce ~ Marriage.s , data=d , type="n" )
+mtext( "MedianAgeMarriage.s = 0" )
+lines( R.seq , mu.mean )
+shade( mu.PI , R.seq )
+shade( R.PI , R.seq )
+
+```
+
+
 
 
 
 3. Let's now include also the TD children. Does it make sense to ask whether IQ and ADOS are related? Motivate your answer. In any case, if you wanted to build a model to answer that question, which model would you build? Run the model, assess its quality, write a few lines interpreting the results.
 
+```{r}
+#only use visit 1
+asd_3 <- asd[ asd$Visit <= 1 , ]
+
+table(asd_3$ASD)
+
+table(asd_3$ADOS)
+```
+
+It does not really make sense as the distribtion of ADOS will have a bump around 0, as 25 of 38 of the TD children have an ADOS score of 0.Thereby mapping ADOS as a continious relation is a little counter intuitive, as there actually is two categories hidden inside a continious variable. 
+
+However autism is a spectrum disorder and in that case it makes sense to have ADOS as a continious variable. 
+
+So we will try and build the models and see how it works. 
+
+
+```{r}
+#lets center the predictor variable to avoid correlation between alpha and beta 
+
+asd_3$NonVerbalIQ_c <- scale(asd_3$NonVerbalIQ)
+asd_3$VerbalIQ_c <- scale(asd_3$VerbalIQ)
+asd_3$SocialIQ_c <- scale(asd_3$SocialIQ)
+
+#remove child with ID 1, because it contain NA values
+asd_3 <- asd_3[ asd_3$ChildID >= 2 , ]
+
+
+#make prior predictive check --> run the model without the likelyhood (data)
+
+library(brms)
+
+#Define the model
+m_full <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
+
+
+# Define the prior
+#intecept is the ados you have if you are average in verbal iq
+prior = c(prior(normal(6,5), class = "Intercept"), prior(normal(0,5), class = "b"), prior(normal(0,5), class = "sigma"))
+
+# Draw the consequences of priors 
+m_full_prior <- brm(m_full, asd_3, prior = prior, sample_prior = "only")
+# Prior Predictive Check
+pp_check(m_full_prior)
+# Repeat until you are satisfied
+
+```
+
+```{r}
+m_full_1 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + bv*VerbalIQ_c + bn*NonVerbalIQ_c + bs*SocialIQ_c ,
+        a ~ dnorm( 6 , 5 ),
+        bn ~ dnorm( 0 , 5 ),
+        bs ~ dnorm( 0 , 5 ), 
+        bv ~ dnorm( 0 , 5 ),
+        sigma ~ dnorm( 0 , 5 )
+), data=asd_3)
+
+
+precis(m_full_1)
+```
+
+The beta values for nonverbal and verbal crosses zero. The social iq looks more reliable as the confidence intervals are on the same side of zero and is not too far spread out. 
+
+Lets try and make a counterfactual plot
+
+```{r}
+#COunterfactual plot showing the impact of changes in Marriage.s
+
+# prepare new counterfactual data
+nonverbal.avg <- mean( asd_3$NonVerbalIQ_c)
+verbal.avg <- mean( asd_3$VerbalIQ_c)
+Social.seq <- seq( from=-3 , to=3 , length.out=30 )
+pred.data <- data.frame(
+    SocialIQ_c=Social.seq,
+    NonVerbalIQ_c=nonverbal.avg,
+    VerbalIQ_c = verbal.avg
+)
+
+# compute counterfactual mean ados (mu)
+mu <- link( m_full_1 , data=asd_3 )
+mu.mean <- apply( mu , 2 , mean )
+mu.PI <- apply( mu , 2 , PI )
+# simulate counterfactual divorce outcomes
+R.sim <- sim( m_full_1 , data=pred.data , n=1e4 )
+
+R.PI <- apply( R.sim , 2 , PI )
+# display predictions, hiding raw data with type="n"
+plot( ADOS ~ SocialIQ_c , data=asd_3 , type="n" )
+mtext( "Nonverbal = 0, Verbal = 0" )
+lines( Social.seq , mu.mean )
+shade( mu.PI , Social.seq )
+shade( R.PI , Social.seq )
+
+
+Social.seq
+```
 
 
 
@@ -430,6 +594,8 @@ Would maybe be better to create a model with asd predicted by verbal_iq.
 
 
 4.1. You have three scores for IQ, do they show shared variance? Is that the same in TD and ASD? What does that tell us about IQ?
+
+Social IQ explains some variance which is not captured by nonverbal and verbal IQ. 
 
 
 
