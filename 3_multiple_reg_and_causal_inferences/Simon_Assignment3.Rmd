@@ -35,23 +35,42 @@ asd<-read.csv('Assignment3Data.csv')
 asd1<-filter(asd, Visit==1)
 asd1<-filter(asd1, ChildID!=1)
 asd1<-filter(asd1, ASD==1)
+#asd1<-filter(asd1, ADOS>1) #removing child with 0 ADOS since he is an outlier
+
+asd2<-filter(asd, Visit==1)
+asd2<-filter(asd2, ChildID!=1)
+
+asd3<-filter(asd, Visit==1)
+asd3<-filter(asd3, ChildID!=1)
+asd3<-filter(asd3, ASD==0)
 
 asd1$NonVerbalIQ.s<-(asd1$NonVerbalIQ-mean(asd1$NonVerbalIQ,na.rm=T))/sd(asd1$NonVerbalIQ,na.rm=T)
 asd1$VerbalIQ.s<-(asd1$VerbalIQ-mean(asd1$VerbalIQ,na.rm=T))/sd(asd1$VerbalIQ,na.rm=T)
 asd1$SocialIQ.s<-(asd1$SocialIQ-mean(asd1$SocialIQ,na.rm=T))/sd(asd1$SocialIQ,na.rm=T)
 #asd1$ADOS.s<-(asd1$ADOS-mean(asd1$ADOS,na.rm=T))/sd(asd1$ADOS,na.rm=T)
 
+asd2$NonVerbalIQ.s<-(asd2$NonVerbalIQ-mean(asd2$NonVerbalIQ,na.rm=T))/sd(asd2$NonVerbalIQ,na.rm=T)
+asd2$VerbalIQ.s<-(asd2$VerbalIQ-mean(asd2$VerbalIQ,na.rm=T))/sd(asd2$VerbalIQ,na.rm=T)
+asd2$SocialIQ.s<-(asd2$SocialIQ-mean(asd2$SocialIQ,na.rm=T))/sd(asd2$SocialIQ,na.rm=T)
+#asd2$ADOS.s<-log(asd2$ADOS)
+  
+asd3$NonVerbalIQ.s<-(asd3$NonVerbalIQ-mean(asd3$NonVerbalIQ,na.rm=T))/sd(asd3$NonVerbalIQ,na.rm=T)
+asd3$VerbalIQ.s<-(asd3$VerbalIQ-mean(asd3$VerbalIQ,na.rm=T))/sd(asd3$VerbalIQ,na.rm=T)
+asd3$SocialIQ.s<-(asd3$SocialIQ-mean(asd3$SocialIQ,na.rm=T))/sd(asd3$SocialIQ,na.rm=T)
+
 asd1$Estimate<- asd1$ADOS
+asd2$Estimate<- asd2$ADOS
 ```
 
 ```{r 1.1}
 ## VerbalIQ model
 verb <- bf(ADOS ~ 1 + VerbalIQ.s)
 
-prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -2 , 5 ), class='b'), prior(normal( 0 , 2 ), class='sigma'))
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -5 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
 post_verb <- brm(verb, asd1, prior = prior, sample_prior = T)
 
-pp_check(post_verb)
+prior_verb <- brm(verb, asd1, prior = prior, sample_prior = 'only')
+pp_check(prior_verb)
 
 summary(post_verb)
 
@@ -107,16 +126,18 @@ fitted(post_verb) %>%
   # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
             # aes(label = Loc), 
             #hjust = 0, nudge_x = - 0.65) +
-  labs(x = "Observed ADOS", y = "Predicted ADOS") +
+  labs(title='Posterior predictive plot for VerbalIQ',x = "Observed ADOS", y = "Predicted ADOS") +
   theme_bw() +
   theme(panel.grid = element_blank())
+
+
 ```
 
 ```{r 1.2}
 ## NonVerbalIQ model 
 nonverb <- bf(ADOS ~ 1 + NonVerbalIQ.s)
 
-prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -2 , 5 ), class='b'), prior(normal( 0 , 2 ), class='sigma'))
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -5 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
 post_nonverb <- brm(nonverb, asd1, prior = prior, sample_prior = T)
 
 pp_check(post_nonverb)
@@ -175,7 +196,7 @@ fitted(post_nonverb) %>%
   # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
             # aes(label = Loc), 
             #hjust = 0, nudge_x = - 0.65) +
-  labs(x = "Observed ADOS", y = "Predicted ADOS") +
+  labs(title='Posterior predictive plot for NonverbalIQ',x = "Observed ADOS", y = "Predicted ADOS") +
   theme_bw() +
   theme(panel.grid = element_blank())
 ```
@@ -184,7 +205,7 @@ fitted(post_nonverb) %>%
 ## SocialIQ model 
 social <- bf(ADOS ~ 1 + SocialIQ.s)
 
-prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -2 , 5 ), class='b'), prior(normal( 0 , 2 ), class='sigma'))
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -5 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
 post_social <- brm(social, asd1, prior = prior, sample_prior = T)
 
 pp_check(post_social)
@@ -243,7 +264,7 @@ fitted(post_social) %>%
   # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
             # aes(label = Loc), 
             #hjust = 0, nudge_x = - 0.65) +
-  labs(x = "Observed ADOS", y = "Predicted ADOS") +
+  labs(title='Posterior predictive plot for SocialIQ', x = "Observed ADOS", y = "Predicted ADOS") +
   theme_bw() +
   theme(panel.grid = element_blank())
 
@@ -251,6 +272,7 @@ fitted(post_social) %>%
 
 2. Do the different aspects of IQ account for different portions of the variance in ADOS? 
 ```{r 2.}
+# Correlation tests
 cor(asd1$NonVerbalIQ.s,asd1$VerbalIQ.s)
 cor(asd1$NonVerbalIQ.s,asd1$SocialIQ.s)
 cor(asd1$VerbalIQ.s,asd1$SocialIQ.s)
@@ -260,7 +282,319 @@ pairlist()
 2.1. Does it make sense to have all IQ measures in the same model? First write a few lines answering the question and motivating your answer, including a discussion as to what happens when you put all of them in the same model. Then build a model following your answer. If your answer is "no", you are not free, you still have to answer: are there alternative ways of answering the question?
 2.2. Build the model, assess its quality, write a few lines interpreting the results.
 
+```{r 2.}
+## All model 
+all <- bf(ADOS ~ 1 + SocialIQ.s+NonVerbalIQ.s+VerbalIQ.s)
+
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -2 , 5 ), class='b'), prior(normal( 0 , 2 ), class='sigma'))
+post_all <- brm(all, asd1, prior = prior, sample_prior = T)
+
+pp_check(post_all)
+
+summary(post_all)
+```
+
+```{r 2.plot SocialIQ}
+# Plot
+# We need new `nd` data
+nd <- tibble( SocialIQ.s      = seq(from = -3, to = 3, length.out = 30),
+         NonVerbalIQ.s = rep(mean(asd1$NonVerbalIQ.s), times = 30),
+         VerbalIQ.s = rep(mean(asd1$VerbalIQ.s), times = 30))
+  
+fitted(post_all, newdata = nd) %>% 
+  as_tibble() %>% 
+  # Since `fitted()` and `predict()` name their intervals the same way, we'll need to
+  # `rename()` then to keep them straight.
+  rename(f_ll = Q2.5,
+         f_ul = Q97.5) %>% 
+  # Note how we're just nesting the `predict()` code right inside `bind_cols()`
+  bind_cols(
+    predict(post_all, newdata = nd) %>% 
+      as_tibble() %>% 
+      # Since we only need the intervals, we'll use `transmute()` rather than `mutate()`
+      transmute(p_ll = Q2.5,
+                p_ul = Q97.5)
+  ) %>% 
+  bind_cols(nd) %>% 
+  
+  # We're finally ready to plot
+  ggplot(aes(x = SocialIQ.s, y = Estimate)) +
+  geom_ribbon(aes(ymin = p_ll, ymax = p_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_ribbon(aes(ymin = f_ll, ymax = f_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_line(color = "firebrick4") +
+  coord_cartesian(xlim = range(asd1$SocialIQ.s)) +
+  labs(subtitle = "Counterfactual plot for which\nNonVerbalIQ = 0 & VerbalIQ = 0",
+       y = "ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  geom_point(data = asd1) 
+
+```
+```{r 2. plot VerbalIQ}
+nd <- tibble(  VerbalIQ.s     = seq(from = -3, to = 3, length.out = 30),
+         NonVerbalIQ.s = rep(mean(asd1$NonVerbalIQ.s), times = 30),
+         SocialIQ.s = rep(mean(asd1$SocialIQ.s), times = 30))
+  
+fitted(post_all, newdata = nd) %>% 
+  as_tibble() %>% 
+  # Since `fitted()` and `predict()` name their intervals the same way, we'll need to
+  # `rename()` then to keep them straight.
+  rename(f_ll = Q2.5,
+         f_ul = Q97.5) %>% 
+  # Note how we're just nesting the `predict()` code right inside `bind_cols()`
+  bind_cols(
+    predict(post_all, newdata = nd) %>% 
+      as_tibble() %>% 
+      # Since we only need the intervals, we'll use `transmute()` rather than `mutate()`
+      transmute(p_ll = Q2.5,
+                p_ul = Q97.5)
+  ) %>% 
+  bind_cols(nd) %>% 
+  
+  # We're finally ready to plot
+  ggplot(aes(x = VerbalIQ.s, y = Estimate)) +
+  geom_ribbon(aes(ymin = p_ll, ymax = p_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_ribbon(aes(ymin = f_ll, ymax = f_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_line(color = "firebrick4") +
+  coord_cartesian(xlim = range(asd1$SocialIQ.s)) +
+  labs(subtitle = "Counterfactual plot for which\nNonVerbalIQ = 0 & SocialIQ = 0",
+       y = "ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  geom_point(data = asd1) 
+```
+```{r 2. plot NonVerbalIQ}
+nd <- tibble( NonVerbalIQ.s   = seq(from = -3, to = 3, length.out = 30),
+         VerbalIQ.s = rep(mean(asd1$VerbalIQ.s), times = 30),
+         SocialIQ.s = rep(mean(asd1$SocialIQ.s), times = 30))
+  
+fitted(post_all, newdata = nd) %>% 
+  as_tibble() %>% 
+  # Since `fitted()` and `predict()` name their intervals the same way, we'll need to
+  # `rename()` then to keep them straight.
+  rename(f_ll = Q2.5,
+         f_ul = Q97.5) %>% 
+  # Note how we're just nesting the `predict()` code right inside `bind_cols()`
+  bind_cols(
+    predict(post_all, newdata = nd) %>% 
+      as_tibble() %>% 
+      # Since we only need the intervals, we'll use `transmute()` rather than `mutate()`
+      transmute(p_ll = Q2.5,
+                p_ul = Q97.5)
+  ) %>% 
+  bind_cols(nd) %>% 
+  
+  # We're finally ready to plot
+  ggplot(aes(x = NonVerbalIQ.s, y = Estimate)) +
+  geom_ribbon(aes(ymin = p_ll, ymax = p_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_ribbon(aes(ymin = f_ll, ymax = f_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_line(color = "firebrick4") +
+  coord_cartesian(xlim = range(asd1$SocialIQ.s)) +
+  labs(subtitle = "Counterfactual plot for which\nVerbalIQ = 0 & SocialIQ = 0",
+       y = "ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  geom_point(data = asd1) 
+```
+```{r 2. posterior predictive plot}
+fitted(post_all) %>%
+  as_tibble() %>%
+  bind_cols(asd1) %>%
+  
+  ggplot(aes(x = ADOS, y = Estimate)) +
+  geom_abline(linetype = 2, color = "grey50", size = .5) +
+  geom_point(size = 1.5, color = "firebrick4", alpha = 3/4) +
+  geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
+                 size = 1/4, color = "firebrick4") +
+  geom_linerange(aes(ymin = Estimate - Est.Error, 
+                     ymax = Estimate + Est.Error),
+                 size = 1/2, color = "firebrick4") +
+  # Note our use of the dot placeholder, here: https://magrittr.tidyverse.org/reference/pipe.html
+  # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
+            # aes(label = Loc), 
+            #hjust = 0, nudge_x = - 0.65) +
+  labs(title='Posterior predictive plot for the model with all predictors',x = "Observed ADOS", y = "Predicted ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+```
 3. Let's now include also the TD children. Does it make sense to ask whether IQ and ADOS are related? Motivate your answer. In any case, if you wanted to build a model to answer that question, which model would you build? Run the model, assess its quality, write a few lines interpreting the results.
+```{r 3}
+## All model 
+all <- bf(ADOS ~ 1 + SocialIQ.s+NonVerbalIQ.s+VerbalIQ.s)
+
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( 0 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
+
+prior_fullall <- brm(all, asd2, prior = prior, sample_prior = 'only')
+
+pp_check(prior_fullall)
+
+post_fullall <- brm(all, asd2, prior = prior, sample_prior = T)
+
+summary(post_fullall)
+```
+
+```{r 3.plot SocialIQ}
+# Plot
+# We need new `nd` data
+nd <- tibble( SocialIQ.s      = seq(from = -3, to = 3, length.out = 30),
+         NonVerbalIQ.s = rep(mean(asd2$NonVerbalIQ.s), times = 30),
+         VerbalIQ.s = rep(mean(asd2$VerbalIQ.s), times = 30))
+  
+fitted(post_fullall, newdata = nd) %>% 
+  as_tibble() %>% 
+  # Since `fitted()` and `predict()` name their intervals the same way, we'll need to
+  # `rename()` then to keep them straight.
+  rename(f_ll = Q2.5,
+         f_ul = Q97.5) %>% 
+  # Note how we're just nesting the `predict()` code right inside `bind_cols()`
+  bind_cols(
+    predict(post_fullall, newdata = nd) %>% 
+      as_tibble() %>% 
+      # Since we only need the intervals, we'll use `transmute()` rather than `mutate()`
+      transmute(p_ll = Q2.5,
+                p_ul = Q97.5)
+  ) %>% 
+  bind_cols(nd) %>% 
+  
+  # We're finally ready to plot
+  ggplot(aes(x = SocialIQ.s, y = Estimate)) +
+  geom_ribbon(aes(ymin = p_ll, ymax = p_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_ribbon(aes(ymin = f_ll, ymax = f_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_line(color = "firebrick4") +
+  coord_cartesian(xlim = range(asd2$SocialIQ.s)) +
+  labs(subtitle = "Counterfactual plot for which\nNonVerbalIQ = 0 & VerbalIQ = 0",
+       y = "ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  geom_point(data = asd2) 
+
+```
+```{r 3. plot VerbalIQ}
+nd <- tibble(  VerbalIQ.s     = seq(from = -3, to = 3, length.out = 30),
+         NonVerbalIQ.s = rep(mean(asd2$NonVerbalIQ.s), times = 30),
+         SocialIQ.s = rep(mean(asd2$SocialIQ.s), times = 30))
+  
+fitted(post_fullall, newdata = nd) %>% 
+  as_tibble() %>% 
+  # Since `fitted()` and `predict()` name their intervals the same way, we'll need to
+  # `rename()` then to keep them straight.
+  rename(f_ll = Q2.5,
+         f_ul = Q97.5) %>% 
+  # Note how we're just nesting the `predict()` code right inside `bind_cols()`
+  bind_cols(
+    predict(post_fullall, newdata = nd) %>% 
+      as_tibble() %>% 
+      # Since we only need the intervals, we'll use `transmute()` rather than `mutate()`
+      transmute(p_ll = Q2.5,
+                p_ul = Q97.5)
+  ) %>% 
+  bind_cols(nd) %>% 
+  
+  # We're finally ready to plot
+  ggplot(aes(x = VerbalIQ.s, y = Estimate)) +
+  geom_ribbon(aes(ymin = p_ll, ymax = p_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_ribbon(aes(ymin = f_ll, ymax = f_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_line(color = "firebrick4") +
+  coord_cartesian(xlim = range(asd2$VerbalIQ.s)) +
+  labs(subtitle = "Counterfactual plot for which\nNonVerbalIQ = 0 & SocialIQ = 0",
+       y = "ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  geom_point(data = asd2) 
+```
+```{r 3. plot NonVerbalIQ}
+nd <- tibble( NonVerbalIQ.s   = seq(from = -3, to = 3, length.out = 30),
+         VerbalIQ.s = rep(mean(asd2$VerbalIQ.s), times = 30),
+         SocialIQ.s = rep(mean(asd2$SocialIQ.s), times = 30))
+  
+fitted(post_fullall, newdata = nd) %>% 
+  as_tibble() %>% 
+  # Since `fitted()` and `predict()` name their intervals the same way, we'll need to
+  # `rename()` then to keep them straight.
+  rename(f_ll = Q2.5,
+         f_ul = Q97.5) %>% 
+  # Note how we're just nesting the `predict()` code right inside `bind_cols()`
+  bind_cols(
+    predict(post_fullall, newdata = nd) %>% 
+      as_tibble() %>% 
+      # Since we only need the intervals, we'll use `transmute()` rather than `mutate()`
+      transmute(p_ll = Q2.5,
+                p_ul = Q97.5)
+  ) %>% 
+  bind_cols(nd) %>% 
+  
+  # We're finally ready to plot
+  ggplot(aes(x = NonVerbalIQ.s, y = Estimate)) +
+  geom_ribbon(aes(ymin = p_ll, ymax = p_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_ribbon(aes(ymin = f_ll, ymax = f_ul),
+              fill = "firebrick", alpha = 1/5) +
+  geom_line(color = "firebrick4") +
+  coord_cartesian(xlim = range(asd2$NonVerbalIQ.s)) +
+  labs(subtitle = "Counterfactual plot for which\nVerbalIQ = 0 & SocialIQ = 0",
+       y = "ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())+
+  geom_point(data = asd2) 
+```
+```{r 3. posterior predictive plot}
+fitted(post_fullall) %>%
+  as_tibble() %>%
+  bind_cols(asd2) %>%
+  
+  ggplot(aes(x = ADOS, y = Estimate)) +
+  geom_abline(linetype = 2, color = "grey50", size = .5) +
+  geom_point(size = 1.5, color = "firebrick4", alpha = 3/4) +
+  geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
+                 size = 1/4, color = "firebrick4") +
+  geom_linerange(aes(ymin = Estimate - Est.Error, 
+                     ymax = Estimate + Est.Error),
+                 size = 1/2, color = "firebrick4") +
+  # Note our use of the dot placeholder, here: https://magrittr.tidyverse.org/reference/pipe.html
+  # geom_text(data = . %>% filter(Loc %in% c("ID", "UT")),
+            # aes(label = Loc), 
+            #hjust = 0, nudge_x = - 0.65) +
+  labs(title='Posterior predictive plot for the model with all predictors',x = "Observed ADOS", y = "Predicted ADOS") +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+```
+
+```{r 3}
+## All model 
+all <- bf(ADOS ~ 1 + SocialIQ.s+NonVerbalIQ.s+VerbalIQ.s)
+
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( 0 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
+
+prior_fullall <- brm(all, asd2, prior = prior, sample_prior = 'only')
+
+pp_check(prior_fullall)
+
+post_fullall <- brm(all, asd2, prior = prior, sample_prior = T)
+
+summary(post_fullall)
+```
+
+```{r 4}
+cor(asd1$NonVerbalIQ.s,asd1$VerbalIQ.s)
+cor(asd1$NonVerbalIQ.s,asd1$SocialIQ.s)
+cor(asd1$VerbalIQ.s,asd1$SocialIQ.s)
+
+cor(asd3$NonVerbalIQ.s,asd3$VerbalIQ.s)
+cor(asd3$NonVerbalIQ.s,asd3$SocialIQ.s)
+cor(asd3$VerbalIQ.s,asd3$SocialIQ.s)
+
+```
+
 
 4. Let's discuss contents:
 4.1. You have three scores for IQ, do they show shared variance? Is that the same in TD and ASD? What does that tell us about IQ?
