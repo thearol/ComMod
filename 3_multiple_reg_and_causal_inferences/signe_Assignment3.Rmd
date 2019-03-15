@@ -293,7 +293,25 @@ precis(check_1.1)
 
 It could make sense if they do not correlate too much. Use chapter 5 about multivariate models to assess whether they correlate. Non-verbal_IQ and social_IQ could potentially explain different variance in the data. 
 
-The first thing we will do is to check whether the IQ measures correlate. 
+The first thing we will do is to check whether the IQ measures correlate.
+
+
+```{r}
+#Define the model
+m1.4.2 <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
+
+
+# Define the prior
+#intecept is the ados you have if you are average in verbal iq
+prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(0,5), class = "b"), prior(normal(0,5), class = "sigma"))
+
+# Draw the consequences of priors 
+m_1.8_prior <- brm(m1.8, asd_3, prior = prior, sample_prior = "only")
+# Prior Predictive Check
+pp_check(m_1.8_prior)
+# Repeat until you are satisfied
+```
+
 
 ```{r}
 #Create model with all predictors
@@ -303,14 +321,14 @@ m1.4 <- rethinking::map(
     alist(
         ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + bs*SocialIQ_c + bn*NonVerbalIQ_c + bv*VerbalIQ_c ,
-        a ~ dnorm( 8 , 5 ) ,
+        a ~ dnorm( 12 , 5 ) ,
         bs ~ dnorm(0, 5 ) ,
         bn ~ dnorm(0,5),
         bv ~ dnorm(0,5),
         sigma ~ dnorm( 0 , 5 )
 ), data = asd_2)
 
-
+precis(m1.4)
 
 pairs(~  ADOS + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c, 
       data = asd_2, col = rangi2)
@@ -516,7 +534,7 @@ asd_3 <- asd_3[ asd_3$ChildID >= 2 , ]
 library(brms)
 
 #Define the model
-m_full <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
+m1.8 <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
 
 
 # Define the prior
@@ -524,9 +542,9 @@ m_full <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
 prior = c(prior(normal(6,5), class = "Intercept"), prior(normal(0,5), class = "b"), prior(normal(0,5), class = "sigma"))
 
 # Draw the consequences of priors 
-m_full_prior <- brm(m_full, asd_3, prior = prior, sample_prior = "only")
+m_1.8_prior <- brm(m1.8, asd_3, prior = prior, sample_prior = "only")
 # Prior Predictive Check
-pp_check(m_full_prior)
+pp_check(m_1.8_prior)
 # Repeat until you are satisfied
 
 ```
