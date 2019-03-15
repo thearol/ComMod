@@ -435,7 +435,7 @@ m1.7 <- rethinking::map(
 # compute expected value at MAP, for each State
 mu_social <- coef(m1.7)['a'] + coef(m1.7)['bn']*asd_2$NonVerbalIQ_c + coef(m1.7)['bv']*asd_2$VerbalIQ_c
 # compute residual for each State
-m.resid_social <- asd_2$NonVerbalIQ_c - mu_social
+m.resid_social <- asd_2$SocialIQ_c - mu_social
 
 
 
