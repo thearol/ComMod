@@ -1,0 +1,112 @@
+---
+title: "interoception"
+author: "Thea Rolskov Sloth"
+date: "3/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(pacman)
+p_load(tidyverse, mousetrap)
+```
+
+1. Remind yourselves what we did in the study and what we expected and why.
+
+in the condition with many high targets and one low, the hand movement will move higher above the low target, compared to the condition with only low targets. thus, the hand prepares.
+
+AND vice versa and we expect 
+
+2. Load one trial of your choice into R. The four columns refer to: sample, condition, x and y.
+
+```{r}
+setwd("~/ComMod/Models of perception and action/21")
+d <- read.delim("21_1.txt", sep = ",", header = FALSE)
+names(d) <- c("sample", "condition", "x", "y")
+
+
+```
+
+3. Plot x against y.
+```{r}
+ggplot(d, aes(x,y)) + geom_point()
+
+```
+
+
+4. Map the y data to a more intuitive screen output with 0/0 in the lower left corner and where
+upwards movements are increasingly positive (i.e. so that it looks like the movements we made
+on the screen).
+
+```{r}
+
+ggplot(d, aes(x,y)) +
+  geom_point() +
+  xlim(0,1800) +
+  ylim(0, 550)
+
+```
+
+
+5. Calculate the distance travelled (for x and y combined).
+
+```{r}
+#calculate euclidian distance....
+dist <- sum(sqrt(diff(d$x)^2 + diff(d$y)^2))
+dist
+
+```
+
+
+6. Add a time vector. I forgot to measure time so I had to estimate it post-hoc (fine for this exercise,
+not great if it was a real experiment). We can assume that each sample takes .0025 s.
+
+```{r}
+time <- seq(from = 0, to = 7.28, by = 0.0025)
+d <- cbind(d, time)
+
+```
+
+
+7. Calculate velocity and acceleration for y, i.e. vertical movement. Remember: 
+Velocity = distance difference / time difference. 
+Acceleration = velocity difference / time difference.
+
+```{r}
+
+vel <- (d$y-lag(d$y, k=1))/(0.0025)
+
+d <- cbind(d, vel)
+
+
+```
+
+8. Play around with some filter to smoothen velocity and acceleration (most common: Butterworth
+filter).
+
+```{r}
+
+
+```
+
+
+9. Using zero crossings in the acceleration, calculate velocity extreme values (maxima and minima).
+Mark those extreme values on top of the x/y plot you made earlier.
+
+```{r}
+
+```
+
+
+10. Using e.g. a range of x positions, specify a segment during which the critical movement happens,
+i.e. the 6th movement is what we would want to compare in this study. Mark the peak in that segment in a different color.
+
+```{r}
+
+```
+
+
+
