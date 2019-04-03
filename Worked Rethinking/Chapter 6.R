@@ -385,6 +385,7 @@ dev7 <- (-2)*sum( dnorm(
 
 dev7
 
+precis(e6.6)
 compare(e6.1,e6.2,e6.3,e6.4,e6.5,e6.6)
 
 dev4
