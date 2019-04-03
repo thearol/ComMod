@@ -62,7 +62,7 @@ m4 <- rethinking::map(
 m5 <- rethinking::map(
     alist(
         height ~ dnorm( mu , sigma ) ,
-        mu <- a + b1*age + b2*age^2 + b3*age^3 + b4*age^4 + b4*age^5,
+        mu <- a + b1*age + b2*age^2 + b3*age^3 + b4*age^4 + b5*age^5,
         a ~ dnorm(130, 50),
         b1 ~ dnorm(0, 10),
         b2 ~ dnorm(0, 10),
@@ -94,6 +94,12 @@ m6 <- rethinking::map(
 compare(m1,m2,m3,m4,m5,m6)
 ```
 
+```{r}
+
+
+
+
+```
 
 
 
