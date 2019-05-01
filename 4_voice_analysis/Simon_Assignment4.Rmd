@@ -18,16 +18,47 @@ In this assignment we do the following:
 The questions you need to answer are: What are the consequences of using a meta-analytic prior? Evaluate the models with conservative and meta-analytic priors. Discuss the effects on estimates. Discuss the effects on model quality. Discuss the role that meta-analytic priors should have in scientific practice. Should we systematically use them? Do they have drawbacks? Should we use them to complement more conservative approaches? How does the use of meta-analytic priors you suggest reflect the skeptical and cumulative nature of science?
 
 ### Step by step suggestions
+```{setup}
+setwd(paste(getwd(),'/4_voice_analysis', sep = ''))
+
+library(brms)
+library(readxl)
+library(tidyverse)
+```
 
 Step 1: Reproduce the meta-analysis of pitch sd from previous studies of voice in schizophrenia
 - the data is available as Assignment4MetaData.xlsx
 - Effect size (cohen's d), sd and variance are already calculated (you're welcome!)
 - Since we're only interested in getting a meta-analytic effect size, let's take a shortcut and use bromance magic (brms): https://vuorre.netlify.com/post/2016/09/29/meta-analysis-is-a-special-case-of-bayesian-multilevel-modeling/
 
+```{1.}
+# Loading data
+meta<-read_xlsx('Assignment4MetaData.xlsx')
+
+# Running meta analysis
+brm_out <- brm(
+  MeanES | se(VarianceES) ~ 1 + (1 | StudyID), 
+  prior = set_prior("uniform(0, 1000)", class = "sd"),
+  data = meta
+)
+brm_out
+
+# Estimate Est.Error
+# -0.59      0.33 
+```
+
 Step 2: Prepare the pitch SD data from last year
 - the data is available as Assignment4PitchData.csv (thanks Celine)
 - Also, let's standardize the data, so that they are compatible with our meta-analytic prior (Cohen's d is measured in SDs).
 - Is there any structure in the dataset that we should account for with random effects? How would you implement that? Or, if you don't know how to do bayesian random effects, is there anything we would need to simplify in the dataset?
+
+```{2. }
+pData<-read_xlsx('Assignment4PitchDatav2.xlsx')
+
+pData$PitchSD<-log(pData$PitchSD)
+pData$PitchSDZ<-scale(pData$PitchSD)
+pData$diagnosis<-as.factor(pData$diagnosis)
+```
 
 Step 3: Build a regression model predicting Pitch SD from Diagnosis.
 - how is the outcome distributed? (likelihood function)
@@ -35,15 +66,173 @@ Step 3: Build a regression model predicting Pitch SD from Diagnosis.
 - use a skeptical/conservative prior for the effects of diagnosis. Remember you'll need to motivate it.
 - Describe and plot the estimates. Evaluate model quality
 
+```{3. }
+
+model <- bf(PitchSDZ ~ 1 + diagnosis + (1 | ID))
+
+get_prior(model,pData)
+
+prior <- c(prior(normal( 0, 1 ), class='Intercept'), 
+           prior(normal( 0 , 1 ), class='b',  coef='diagnosis1'),
+           prior(normal( 0 , 1 ), class='sd',  coef='Intercept', group = "ID"),
+           prior(normal( 1 , 1 ), class='sigma'))
+
+post_verb <- brm(model, pData, prior = prior, sample_prior = T)
+
+prior_verb <- brm(model, pData, prior = prior, sample_prior = 'only')
+pp_check(prior_verb)
+
+summary(post_verb)
+
+
+```
+
 Step 4: Now re-run the model with the meta-analytic prior
 - Describe and plot the estimates. Evaluate model quality
+```{4. }
+model <- bf(PitchSDZ ~ 1 + diagnosis + (1 | ID))
 
+get_prior(model,pData)
+
+prior <- c(prior(normal( 0, 1 ), class='Intercept'), 
+           prior(normal( -0.59, 0.33  ), class='b',  coef='diagnosis1'),
+           prior(normal( 0 , 1 ), class='sd',  coef='Intercept', group = "ID"), 
+           prior(normal( 1 , 1 ), class='sigma'))
+
+post_verb2 <- brm(model, pData, prior = prior, sample_prior = T)
+
+prior_verb2 <- brm(model, pData, prior = prior, sample_prior = 'only')
+pp_check(prior_verb2)
+
+summary(post_verb2)
+
+```
 Step 5: Compare the models
 - Plot priors and posteriors of the diagnosis effect in both models
 - Compare posteriors between the two models
 - Compare their relative distance from truth (WAIC)
 - Discuss how they compare and whether any of them is best.
+```{5. }
+waic(post_verb,post_verb2)
 
+marginal_effects(post_verb, points = TRUE)
+
+###
+
+nd <- 
+  tibble(diagnosis = factor(seq(from = 0, to = 1, by = 1)))
+
+         
+p <-
+  predict(post_verb2, allow_new_levels = T, re_formula = ~ (1 | ID), sample_new_levels = "gaussian", newdata = nd, summary = FALSE) %>%
+  as_tibble() %>%
+  bind_cols(nd)
+
+p %>%  
+  glimpse()
+
+p <- as.data.frame(p)
+
+dens(p)
+density(p$V1)
+
+ggplot(d, aes(x=diagnosis, y=PitchSDZ)) + 
+  geom_violin()
+
+library(rethinking)
+
+muPI <- apply( p , 2 , PI )
+mu <- apply( p , 2 , mean )
+
+mu <- as.data.frame(mu)
+muPI <- as.data.frame(muPI)
+
+mu[1,1]
+
+d<-data.frame(diagnosis=c(0))
+
+
+d<-cbind(d,p$V1)
+
+d1<-data.frame(diagnosis=c(1))
+
+d1<-cbind(d1,p$V2)
+
+colnames(d)<-c('diagnosis','PitchSDZ')
+colnames(d1)<-c('diagnosis','PitchSDZ')
+
+d2<-rbind(d,d1)
+d2$diagnosis<-as.factor(d2$diagnosis)
+
+ggplot(d2, aes(x=diagnosis, y=PitchSDZ)) + 
+  geom_violin()+
+  geom_boxplot(width=0.4)+
+  geom_point(data = pData,position = position_jitter(w = 0.1, h = 0))+
+  
+  
+ggplot(pData, aes(x=diagnosis, y=PitchSDZ)) + 
+  geom_violin()
+  #geom_violin(data=d2)+
+  #geom_jitter(shape=16, position=position_dodge(0.2))
+
+?cbind
+pData$mu<-pData$PitchSDZ
+?geom_bar()
+
+ggplot(d, aes(x=diagnosis, y=mu)) + 
+  geom_violin()
+p
+
+ggplot(aes(x = diagnosis, y = mu), data=d) +
+  geom_bar()+
+#geom_errorbar(aes(ymin = Q1.5,  ymax = Q98.5), alpha = 1/3, width = .3) +
+#geom_ribbon(aes(ymin = Q5.5,  ymax = Q94.5), fill = "orange2", alpha = 1/3) +
+#geom_ribbon(aes(ymin = Q16.5, ymax = Q83.5), fill = "orange2", alpha = 1/3) +
+#geom_line(color = "orange4") +
+ggtitle("Posterior ") +
+#coord_cartesian(ylim = range(-1:3)) +
+theme(plot.title = element_text(size = 12, hjust = .5))# +
+geom_point(data = pData) #+ 
+  #scale_x_continuous(breaks=seq(from = 0, to = 1, by = 1))
+  
+
+###
+
+multiplot <- function(x) { 
+    x %>% purrr::map(function(.) { 
+             broom::tidy(., conf.int = TRUE, par_type = "non-varying") }) %>% 
+  dplyr::bind_rows(.id = "model") %>% 
+  ggplot(aes(term, estimate, ymin = lower, ymax = upper, color = model)) + 
+  geom_pointrange(position = position_dodge(width = 0.3)) + coord_flip()
+}
+
+multiplot(list(post_verb1,post_verb2))
+
+###
+
+install.packages('tidybayes')
+
+library(modelr)
+library(tidybayes)
+?data_grid
+
+grid = pData %>%
+  data_grid(diagnosis)
+
+fits = grid %>%
+  add_fitted_draws(post_verb2)
+
+preds = grid %>%
+  add_predicted_draws(post_verb2)
+
+AB %>%
+  ggplot(aes(x = response, y = group)) +
+  geom_halfeyeh(aes(x = .value), relative_scale = 0.7, position = position_nudge(y = 0.1), data = fits) +
+  stat_intervalh(aes(x = .prediction), data = preds) +
+  geom_point(data = AB) +
+  scale_color_brewer()
+
+```
 Step 6: Prepare a nice write up of the analysis and answer the questions at the top.
 
 Optional step 7: how skeptical should a prior be?
