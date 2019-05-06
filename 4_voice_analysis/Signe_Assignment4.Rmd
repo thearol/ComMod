@@ -1,0 +1,355 @@
+---
+title: "Assignment 4 - Applying meta-analytic priors"
+author: "Riccardo Fusaroli"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("~/Documents/CognitiveScience/4.semester/Computational_modeling_for_cognitive_science/ComMod/4_voice_analysis")
+
+
+library(metafor)
+library(lme4)
+library(brms)
+library(tidyverse)
+library("readxl")
+library(ggplot2)
+```
+
+## Assignment 4
+
+In this assignment we do the following:
+- we reproduce the meta-analysis of pitch SD from last semester in a Bayesian framework
+- we reproduce the pitch SD in schizophrenia analysis from last semester using both a conservative and a meta-analytic prior
+- we assess the difference in model quality and estimates using the two priors.
+
+The questions you need to answer are: What are the consequences of using a meta-analytic prior? Evaluate the models with conservative and meta-analytic priors. Discuss the effects on estimates. Discuss the effects on model quality. Discuss the role that meta-analytic priors should have in scientific practice. Should we systematically use them? Do they have drawbacks? Should we use them to complement more conservative approaches? How does the use of meta-analytic priors you suggest reflect the skeptical and cumulative nature of science?
+
+### Step by step suggestions
+
+Step 1: Reproduce the meta-analysis of pitch sd from previous studies of voice in schizophrenia
+- the data is available as Assignment4MetaData.xlsx
+- Effect size (cohen's d), sd and variance are already calculated (you're welcome!)
+- Since we're only interested in getting a meta-analytic effect size, let's take a shortcut and use bromance magic (brms): https://vuorre.netlify.com/post/2016/09/29/meta-analysis-is-a-special-case-of-bayesian-multilevel-modeling/
+
+```{r}
+#load data 
+meta <- read_excel("Assignment4MetaData.xlsx")
+
+#plot the shit 
+ggplot(meta, aes(x=MeanES, y=StudyRef)) +
+  geom_segment(aes(x = MeanES-VarianceES*2, xend = MeanES+VarianceES*2, y=StudyRef, yend=StudyRef)) +
+  geom_point()
+```
+
+
+Difference between UniqueID and ID. In ID they are paired. 
+
+Within participants studies are stronger, becuase filter out individual difference. A way to attempt this in this study is to pair up people with a diagnosis with people who do not have the diagnosis in terms of age, gender, education, iq etc. Use participant ID and not unique ID.  
+
+
+```{r}
+brm_out <- brm(
+  MeanES | se(VarianceES) ~ 1 + (1 | StudyID), #this is where the magic happens, when we have a model with only the intercept it means that we are interested in the mean, yi is the outcome (effect size), se(sei) is a function inside the model, when we measure the effect size we also get a standard error, which is included in the model by adding |se(sei) to the effect size.  
+  prior = set_prior("uniform(0, 1000)", class = "sd"),
+  data = meta,
+  iter = 4000,
+  cores = 4
+  #file = here::here("static/data/metaanalysismodel")
+)
+
+
+brm_out
+```
+
+The mean effect size of the meta analysis is -0.60 and a standard error of 0.31. 
+
+
+
+Step 2: Prepare the pitch SD data from last year
+- the data is available as Assignment4PitchData.csv (thanks Celine)
+- Also, let's standardize the data, so that they are compatible with our meta-analytic prior (Cohen's d is measured in SDs).
+- Is there any structure in the dataset that we should account for with random effects? How would you implement that? Or, if you don't know how to do bayesian random effects, is there anything we would need to simplify in the dataset?
+
+
+The focus is on the pitch sd. The hypothesis is that people with scizofrenia has a lower sd compared to not diagnosed people. 
+
+It could be an idea to control for participant (they are paired, so at the same time controlled for gender) and maybe also for studyid. 
+
+
+```{r}
+data <- read_excel("Assignment4PitchDatav2.xlsx")
+
+#rescale the data 
+data$PitchSD_z <- scale(data$PitchSD)
+
+```
+
+
+
+
+Step 3: Build a regression model predicting Pitch SD from Diagnosis.
+- how is the outcome distributed? (likelihood function)
+- how are the parameters of the likelihood distribution distributed? Which predictors should they be conditioned on?
+- use a skeptical/conservative prior for the effects of diagnosis. Remember you'll need to motivate it.
+- Describe and plot the estimates. Evaluate model quality
+
+```{r}
+model_1 <- bf(PitchSD_z ~ 1 + diagnosis + (1|ID))
+
+get_prior(model_1, data = data, family = gaussian)
+
+prior_con = c(prior(normal(0,1), class = "Intercept"), 
+              prior(normal(0,1), class = "b", coef = "diagnosis"), 
+              prior(normal(0,1), class = "sd",coef = "Intercept", group = "ID"), 
+              prior(normal(0,1), class = "sigma"))
+
+
+model_1.2 <- brm(model_1, 
+               data = data,
+               prior = prior_con,
+               family = gaussian,
+               iter = 5000, warmup = 2000, cores = 4
+               )
+
+
+summary(model_1.2)
+```
+
+```{r}
+# Draw the consequences of priors 
+m_con_prior <- brm(model_1, data, prior = prior_con, sample_prior = "only")
+# Prior Predictive Check
+pp_check(m_con_prior)
+```
+
+
+
+
+```{r}
+#plot posterior of diagnosis
+
+plot(model_1.2, pars = "^b_diagnosis") 
+
+marginal_effects(model_1.2)
+
+```
+
+
+The mean effect size of the meta analysis is -0.63 and a standard error of 0.31. 
+
+
+
+Step 4: Now re-run the model with the meta-analytic prior
+- Describe and plot the estimates. Evaluate model quality
+
+```{r}
+data$diagnosis <- as.factor(data$diagnosis)
+
+prior_meta = c(prior(normal(0, 1), class = "Intercept"), 
+              prior(normal(-0.60,0.32), class = "b", coef = "diagnosis1"), 
+              prior(normal(0,1), class = "sd",coef = "Intercept", group = "ID"), 
+              prior(normal(0,1), class = "sigma"))
+
+
+
+get_prior(model_1, data = data, family = gaussian)
+
+model_1.3 <- brm(model_1, 
+               data = data,
+               prior = prior_meta,
+               family = gaussian,
+               iter = 5000, warmup = 2000, cores = 4
+               )
+
+
+model_1.3
+
+#assess smapling problem 
+pairs(model_1.3)
+```
+
+```{r}
+# Draw the consequences of priors 
+m_meta_prior <- brm(model_1, data, prior = prior_meta, sample_prior = "only")
+# Prior Predictive Check
+pp_check(m_meta_prior)
+```
+
+```{r}
+plot(model_1.3, pars = "^b_diagnosis") 
+
+
+marginal_effects(model_1.3)
+```
+
+
+
+
+Step 5: Compare the models
+- Plot priors and posteriors of the diagnosis effect in both models
+- Compare posteriors between the two models
+- Compare their relative distance from truth (WAIC)
+- Discuss how they compare and whether any of them is best.
+
+
+What plots to make:
+
+Predictive posterior check
+- Looking whether the distribution is captured in the model
+
+Plot of the distribution of the effect size
+- use plot(model_1.2, pars = "^b_diagnosis") 
+
+Plot data together with predictions
+- We have only one predictor --> use marginal_effects(model_1.3)
+- Nice to have data as actual points in the plot + mean and standard error of prediction (an interval)
+    - An upgrade would be to use boxplot or a violin plot 
+- Make a dataset for the predictions
+    - Prepare plotdata with diagnosis and pitch as columns 
+    - Run in through a predict function
+
+
+Model quality
+- Trace plots
+- Divergence issues
+- How well does it fit to the data?
+- Can we make any conclusions from this model?
+
+
+```{r}
+library(ggbeeswarm)
+
+#make predictions
+nd <- tibble(diagnosis = factor(seq(from = 0, to = 1, by = 1)))
+         
+p <- predict(model_1.3, allow_new_levels = T, re_formula = ~ (1 | ID), sample_new_levels = "gaussian", newdata = nd, summary = FALSE)
+
+#as dataframe
+p <- as.data.frame(p)
+
+#make dataframe with diagnosis and predicted estimates 
+diag0 <- subset(p, select = V1)
+
+diag0$diagnosis <- 0
+
+names(diag0) <- c("Estimate", "diagnosis")
+
+diag1 <- subset(p, select = V2)
+
+diag1$diagnosis <- 1
+
+names(diag1) <- c("Estimate", "diagnosis")
+
+pred_data <- rbind(diag0, diag1)
+
+pred_data$diagnosis <- as.factor(pred_data$diagnosis)
+
+#create the plot
+bee <- ggplot(data, aes(x = diagnosis, y = PitchSD_z)) +
+  geom_violin(aes(x = diagnosis, y = Estimate), data = pred_data, trim = FALSE) + 
+  ylim(-3,3) + 
+  geom_quasirandom(alpha = 0.5, colour = "dark red") +
+  labs(x = "diagnosis", y = "Pitch", title = "Flot plot") + 
+  geom_boxplot(aes(x = diagnosis, y = Estimate), data = pred_data, width = 0.12) 
+
+  
+bee
+
+
+dens(pred_data)
+
+
+```
+
+
+```{r}
+#do some waic 
+
+waic(model_1.2, model_1.3)
+```
+
+```{r}
+marginal_effects(model_1.2)
+par(mfrow=c(2,2))
+
+#par(new=FALSE)
+marginal_effects(model_1.3)
+
+```
+
+```{r}
+library(coda)
+coda::HPDinterval(as.mcmc(model_1.2, combine_chains = TRUE))
+
+
+```
+
+DAGGGSGSSS
+
+```{r}
+library(dagitty)
+
+
+g1 <- dagitty( "dag {
+    ID -> PitchSD
+    Diagnosis -> ID
+    Gender -> ID
+    IQ -> ID
+    Age -> ID
+    Diagnosis -> PitchSD
+}")
+
+plot(graphLayout(g1))
+
+```
+
+```{r}
+g2 <- dagitty( "dag {
+    ID -> PitchSD
+    Diagnosis -> ID
+    Gender -> ID
+    IQ -> ID
+    Age -> ID
+    Unknown -> ID
+    Trial -> PitchSD
+    Diagnosis -> PitchSD
+    Study -> PitchSD
+    
+}")
+
+plot(graphLayout(g2))
+```
+
+
+
+
+Step 6: Prepare a nice write up of the analysis and answer the questions at the top.
+
+Optional step 7: how skeptical should a prior be?
+- Try different levels of skepticism and compare them using WAIC.
+
+Optional step 8: Include other predictors
+- Do age, gender and education improve the model?
+- Should they be main effects or interactions?
+
+Optional step 9: Bromance magic.
+- explore the bromance code below including random effects (by default with weakly informative priors)
+- learn how to change the prior
+- explore effects of trial, age, gender, including the appropriate random slopes
+- compare the models you created using WAIC and posterior predictive check (pp_check())
+
+
+```{r}
+
+brm_out <- brm(PitchSD ~ 1 + Diagnosis  +(1|ID_unique/Study), # Outcome as a function of the predictors as in lme4. 
+               data=Data, # Define the data
+               family=gaussian(), # Define the family. 
+               iter = 5000, warmup = 2000, cores = 4)
+summary(brm_out1)
+plot(brm_out1)
+
+```
+
