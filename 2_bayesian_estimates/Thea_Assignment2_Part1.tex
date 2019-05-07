@@ -1,0 +1,674 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Computational Modeling - Week 3 - Assignment 2 - Part 1},
+            pdfauthor={Riccardo Fusaroli},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\newcommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Computational Modeling - Week 3 - Assignment 2 - Part 1}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Riccardo Fusaroli}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+\subsection{In this assignment we learn how to assess rates from a
+binomial distribution, using the case of assessing your teachers'
+knowledge of
+CogSci}\label{in-this-assignment-we-learn-how-to-assess-rates-from-a-binomial-distribution-using-the-case-of-assessing-your-teachers-knowledge-of-cogsci}
+
+\subsubsection{First part}\label{first-part}
+
+You want to assess your teachers' knowledge of cognitive science.
+``These guys are a bunch of drama(turgist) queens, mindless
+philosophers, chattering communication people and Russian spies. Do they
+really know CogSci?'', you think.
+
+To keep things simple (your teachers should not be faced with too
+complicated things): - You created a pool of equally challenging
+questions on CogSci - Each question can be answered correctly or not (we
+don't allow partially correct answers, to make our life simpler). -
+Knowledge of CogSci can be measured on a scale from 0 (negative
+knowledge, all answers wrong) through 0.5 (random chance) to 1 (awesome
+CogSci superpowers)
+
+This is the data: - Riccardo: 3 correct answers out of 6 questions -
+Kristian: 2 correct answers out of 2 questions (then he gets bored) -
+Josh: 160 correct answers out of 198 questions (Josh never gets bored) -
+Mikkel: 66 correct answers out of 132 questions
+
+Questions:
+
+\section{1. What's Riccardo's estimated knowledge of CogSci? What is the
+probability he knows more than chance (0.5) {[}try figuring this out. if
+you can't peek into chapters 3.1 and 3.2 and/or the
+slides{]}?}\label{whats-riccardos-estimated-knowledge-of-cogsci-what-is-the-probability-he-knows-more-than-chance-0.5-try-figuring-this-out.-if-you-cant-peek-into-chapters-3.1-and-3.2-andor-the-slides}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{sum}\NormalTok{( samples_ric }\OperatorTok{>}\StringTok{ }\FloatTok{0.5}\NormalTok{ ) }\OperatorTok{/}\StringTok{ }\KeywordTok{length}\NormalTok{ (samples_ric) }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.5015
+\end{verbatim}
+
+The propbability of Riccardo knowing more than chance depends on the
+prior. If it is the uniform prior then there is a 50\% chance that he
+knows more than 0.5. If we use a prior which assigns 0 to grid-values
+below 0.5 and 1 to grid-values above 0.5, then there is a 100\% chance
+that he performs above chance.
+
+\begin{itemize}
+\tightlist
+\item
+  First implement a grid approximation (hint check paragraph 2.4.1!)
+  with a uniform prior, calculate the posterior and plot the results
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#plot}
+\NormalTok{ric_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Riccardo, uniform prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-3-1.pdf}
+
+\begin{itemize}
+\tightlist
+\item
+  Then implement a quadratic approximation (hint check paragraph
+  2.4.2!).
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# analytical calculation}
+\NormalTok{w <-}\StringTok{ }\DecValTok{3}
+\NormalTok{n <-}\StringTok{ }\DecValTok{6}
+\KeywordTok{curve}\NormalTok{( }\KeywordTok{dbeta}\NormalTok{( x , w}\OperatorTok{+}\DecValTok{1}\NormalTok{ , n}\OperatorTok{-}\NormalTok{w}\OperatorTok{+}\DecValTok{1}\NormalTok{ ) , }\DataTypeTok{from=}\DecValTok{0}\NormalTok{ , }\DataTypeTok{to=}\DecValTok{1}\NormalTok{ )}
+\CommentTok{# quadratic approximation}
+\KeywordTok{curve}\NormalTok{( }\KeywordTok{dnorm}\NormalTok{( x , }\FloatTok{0.5}\NormalTok{ , }\FloatTok{0.2}\NormalTok{ ) , }\DataTypeTok{lty=}\DecValTok{2}\NormalTok{ , }\DataTypeTok{add=}\OtherTok{TRUE}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Quadratic approximation: prior with assumption of knowledge > 0.5"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+N.B. for the rest of the exercise just keep using the grid approximation
+(we'll move to quadratic approximations in two classes)
+
+\section{2. Estimate all the teachers' knowledge of CogSci. Who's best?
+Use grid approximation. Comment on the posteriors of Riccardo and
+Mikkel.}\label{estimate-all-the-teachers-knowledge-of-cogsci.-whos-best-use-grid-approximation.-comment-on-the-posteriors-of-riccardo-and-mikkel.}
+
+2a. Produce plots of the prior, and posterior for each teacher.
+
+From now on we will use the following prior that assumes the teachers
+will perform better than chance (which is basically the same as having
+zero CogSci knowledge)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#plot of prior}
+
+\NormalTok{Data=}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{grid=}\NormalTok{grid,}\DataTypeTok{posterior=}\NormalTok{posterior,}\DataTypeTok{prior=}\NormalTok{alt_prior,}\DataTypeTok{likelihood=}\NormalTok{likelihood)}
+\KeywordTok{ggplot}\NormalTok{(Data,}\KeywordTok{aes}\NormalTok{(grid,posterior)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(grid,alt_prior),}\DataTypeTok{color=}\StringTok{'red'}\NormalTok{)}\OperatorTok{+}\StringTok{ }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Knowledge of CogSci"}\NormalTok{)}\OperatorTok{+}\StringTok{ }\KeywordTok{ylab}\NormalTok{(}\StringTok{"posterior probability"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Prior with assumption of knowledge > 0.5"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-6-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# tylle}
+
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{2}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{2}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{alt_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{tylle_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Tylle, prior with assumption of knowledge > 0.5"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-7-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Josh}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{160}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{198}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and alt_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{alt_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{josh_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Josh, prior with assumption of knowledge > 0.5"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-7-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Mikkel}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{66}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{132}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and alt_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{alt_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{mikkel_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Mikkel, prior with assumption of knowledge > 0.5"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-7-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Riccardo}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{3}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{6}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and alt_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{alt_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{riccardo_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Riccardo, prior with assumption of knowledge > 0.5"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-7-4.pdf}
+
+In percentages Riccardo and Mikkel answer roughly equally bad. However,
+since we have many more datapoints from Mikkel, as the posterior
+distribution shows, we can be much more certain in assessing Mikkel's
+CogSci knowledge. This is shown in the area under the curve being more
+narrow compared to Riccardo's.
+
+\section{Who's best?}\label{whos-best}
+
+Assessing the posterior distribution, we are quite certrain that Josh's
+knowledge lays around 0.8, which is somewhat impressive. However,
+looking at Tylle's curve we are very uncertain - it could be 0.5, but
+also 1 (awesome). This is due to the fact that we have sucj few
+datapoints from Tylle, resulting in high uncertainty.
+
+\section{3. Change the prior. Given your teachers have all CogSci jobs,
+you should start with a higher appreciation of their knowledge: the
+prior is a normal distribution with a mean of 0.8 and a standard
+deviation of 0.2. Do the results change (and if so
+how)?}\label{change-the-prior.-given-your-teachers-have-all-cogsci-jobs-you-should-start-with-a-higher-appreciation-of-their-knowledge-the-prior-is-a-normal-distribution-with-a-mean-of-0.8-and-a-standard-deviation-of-0.2.-do-the-results-change-and-if-so-how}
+
+3a. Produce plots of the prior and posterior for each teacher.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{new_prior <-}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(grid,}\FloatTok{0.8}\NormalTok{,}\FloatTok{0.2}\NormalTok{)}
+\CommentTok{# plot(new_prior)}
+\CommentTok{#plot of new prior}
+
+\NormalTok{new_Data=}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{grid=}\NormalTok{grid,}\DataTypeTok{posterior=}\NormalTok{posterior,}\DataTypeTok{prior=}\NormalTok{new_prior,}\DataTypeTok{likelihood=}\NormalTok{likelihood)}
+\KeywordTok{ggplot}\NormalTok{(new_Data,}\KeywordTok{aes}\NormalTok{(grid,posterior)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(grid,prior),}\DataTypeTok{color=}\StringTok{'red'}\NormalTok{)}\OperatorTok{+}\StringTok{ }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Knowledge of CogSci"}\NormalTok{)}\OperatorTok{+}\StringTok{ }\KeywordTok{ylab}\NormalTok{(}\StringTok{"posterior probability"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Plot of new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-8-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#posterior for each teacher}
+
+\CommentTok{# tylle}
+
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{2}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{2}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{new_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{tylle_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Tylle, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-9-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Josh}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{160}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{198}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{new_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{josh_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Josh, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-9-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Mikkel}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{66}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{132}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{new_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{mikkel_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Mikkel, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-9-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#riccardo}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{3}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{6}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{new_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{ric_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Riccardo, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-9-4.pdf}
+
+Change in results: Yes, they change. At least for Tylle and Riccardo. We
+can see that the prior affects the posterior more, when there are few
+datapoints. Josh and Mikkel remain more or less the samme, since there
+are many datapoints, and thereby are not so manipulative by the prior.
+
+\section{4. You go back to your teachers and collect more data (multiply
+the previous numbers by 100). Calculate their knowledge with both a
+uniform prior and a normal prior with a mean of 0.8 and a standard
+deviation of 0.2. Do you still see a difference between the results?
+Why?}\label{you-go-back-to-your-teachers-and-collect-more-data-multiply-the-previous-numbers-by-100.-calculate-their-knowledge-with-both-a-uniform-prior-and-a-normal-prior-with-a-mean-of-0.8-and-a-standard-deviation-of-0.2.-do-you-still-see-a-difference-between-the-results-why}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#multiply all data with 100}
+\NormalTok{new_d <-}\StringTok{ }\NormalTok{d}\OperatorTok{*}\DecValTok{100}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning in Ops.factor(left, right): '*' not meaningful for factors
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{new_d}\OperatorTok{$}\NormalTok{Teacher <-}\StringTok{ }\NormalTok{d}\OperatorTok{$}\NormalTok{Teacher}
+
+\NormalTok{new_d}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Correct Questions Teacher
+## 1     300       600      RF
+## 2     200       200      KT
+## 3   16000     19800      JS
+## 4    6600     13200      MW
+\end{verbatim}
+
+Uniform prior
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#posterior for each teacher}
+
+\CommentTok{# tylle}
+
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{ new_d[}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{], }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{uni_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{tylle_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Tylle with more data, uniform prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-12-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Josh}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{3}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{new_d[}\DecValTok{3}\NormalTok{,}\DecValTok{2}\NormalTok{] , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{uni_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{josh_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Josh with more data, uniform prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-12-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Mikkel}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{4}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{new_d[}\DecValTok{4}\NormalTok{,}\DecValTok{2}\NormalTok{] , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{uni_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{mikkel_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Mikkel with more data, uniform prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-12-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#riccardo}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{new_d[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{], }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{uni_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{ric_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Riccardo with more data, uniform prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-12-4.pdf}
+
+Normal prior:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#posterior for each teacher}
+
+\CommentTok{# tylle}
+
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{ new_d[}\DecValTok{2}\NormalTok{,}\DecValTok{1}\NormalTok{], }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{norm_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{tylle_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Tylle with more data, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-13-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Josh}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{3}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{new_d[}\DecValTok{3}\NormalTok{,}\DecValTok{2}\NormalTok{] , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{norm_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{josh_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Josh with more data, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-13-2.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#Mikkel}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{4}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{new_d[}\DecValTok{4}\NormalTok{,}\DecValTok{2}\NormalTok{] , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{norm_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{mikkel_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Mikkel with more data, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-13-3.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#riccardo}
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( new_d[}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{] , }\DataTypeTok{size=}\NormalTok{new_d[}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{], }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and new_prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{norm_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{ric_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Riccardo with more data, new normal prior (0.8,0.2)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-13-4.pdf}
+
+The impact of the prior becomes very small when we have so much data.
+
+\section{5. Imagine you're a skeptic and think your teachers do not know
+anything about CogSci, given the content of their classes. How would you
+operationalize that
+belief?}\label{imagine-youre-a-skeptic-and-think-your-teachers-do-not-know-anything-about-cogsci-given-the-content-of-their-classes.-how-would-you-operationalize-that-belief}
+
+Make a prior of a normal distribution that peaks at 0.5 and with a quite
+small SE, since we are pretty sure that they are useless.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{stupid_prior <-}\StringTok{ }\KeywordTok{dnorm}\NormalTok{(grid,}\FloatTok{0.5}\NormalTok{,}\FloatTok{0.1}\NormalTok{)}
+
+\NormalTok{new_Data=}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{grid=}\NormalTok{grid,}\DataTypeTok{posterior=}\NormalTok{posterior,}\DataTypeTok{prior=}\NormalTok{stupid_prior,}\DataTypeTok{likelihood=}\NormalTok{likelihood)}
+\KeywordTok{ggplot}\NormalTok{(new_Data,}\KeywordTok{aes}\NormalTok{(grid,posterior)) }\OperatorTok{+}\StringTok{ }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(grid,stupid_prior),}\DataTypeTok{color=}\StringTok{'red'}\NormalTok{)}\OperatorTok{+}\StringTok{ }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Knowledge of CogSci"}\NormalTok{)}\OperatorTok{+}\StringTok{ }\KeywordTok{ylab}\NormalTok{(}\StringTok{"posterior probability"}\NormalTok{) }\OperatorTok{+}\StringTok{ }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Plot of stupid prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-14-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# tylle}
+
+\CommentTok{# compute likelihood at each value in grid}
+\NormalTok{likelihood <-}\StringTok{ }\KeywordTok{dbinom}\NormalTok{( }\DecValTok{2}\NormalTok{ , }\DataTypeTok{size=}\DecValTok{2}\NormalTok{ , }\DataTypeTok{prob=}\NormalTok{grid )}
+\CommentTok{# compute product of likelihood and prior}
+\NormalTok{unstd.posterior <-}\StringTok{ }\NormalTok{likelihood }\OperatorTok{*}\StringTok{ }\NormalTok{stupid_prior}
+\CommentTok{# standardize the posterior, so it sums to 1}
+\NormalTok{posterior <-}\StringTok{ }\NormalTok{unstd.posterior }\OperatorTok{/}\StringTok{ }\KeywordTok{sum}\NormalTok{(unstd.posterior)}
+
+\CommentTok{#plot}
+\NormalTok{tylle_plot <-}\StringTok{ }\KeywordTok{plot}\NormalTok{( grid , posterior , }\DataTypeTok{type=}\StringTok{"b"}\NormalTok{ ,}
+    \DataTypeTok{xlab=}\StringTok{"probability of correct"}\NormalTok{ , }\DataTypeTok{ylab=}\StringTok{"posterior probability"}\NormalTok{ )}
+\KeywordTok{mtext}\NormalTok{(}\StringTok{"Tylle is stupid, sceptic prior"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Thea_Assignment2_Part1_files/figure-latex/unnamed-chunk-14-2.pdf}
+
+
+\end{document}
