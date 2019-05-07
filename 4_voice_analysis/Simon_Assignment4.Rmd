@@ -123,34 +123,11 @@ nd <-
   tibble(diagnosis = factor(seq(from = 0, to = 1, by = 1)))
 
          
-p <-
-  predict(post_verb2, allow_new_levels = T, re_formula = ~ (1 | ID), sample_new_levels = "gaussian", newdata = nd, summary = FALSE) %>%
-  as_tibble() %>%
-  bind_cols(nd)
-
-p %>%  
-  glimpse()
+p <- predict(post_verb, allow_new_levels = T, re_formula = ~ (1 | ID), sample_new_levels = "gaussian", newdata = nd, summary = FALSE)
 
 p <- as.data.frame(p)
 
-dens(p)
-density(p$V1)
-
-ggplot(d, aes(x=diagnosis, y=PitchSDZ)) + 
-  geom_violin()
-
-library(rethinking)
-
-muPI <- apply( p , 2 , PI )
-mu <- apply( p , 2 , mean )
-
-mu <- as.data.frame(mu)
-muPI <- as.data.frame(muPI)
-
-mu[1,1]
-
 d<-data.frame(diagnosis=c(0))
-
 
 d<-cbind(d,p$V1)
 
@@ -164,12 +141,17 @@ colnames(d1)<-c('diagnosis','PitchSDZ')
 d2<-rbind(d,d1)
 d2$diagnosis<-as.factor(d2$diagnosis)
 
+library(ggbeeswarm)
+
 ggplot(d2, aes(x=diagnosis, y=PitchSDZ)) + 
-  geom_violin()+
-  geom_boxplot(width=0.4)+
-  geom_point(data = pData,position = position_jitter(w = 0.1, h = 0))+
-  
-  
+  geom_violin(size=1.25)+
+  geom_boxplot(width=0.4,size=1.25)+
+  geom_quasirandom(data = pData,color = 'dark red',alpha = 0.8,position = position_jitter(w = 0.1, h = 0))+
+  ylim(-3,4)+
+  labs(title = "Estimated distribution of pitch standard deviation according to diagnosis")+
+  xlab('Diagnosis')+
+  scale_x_discrete(breaks=c("0","1"),labels=c("Neurotypical", "Schizophrenic"))
+
 ggplot(pData, aes(x=diagnosis, y=PitchSDZ)) + 
   geom_violin()
   #geom_violin(data=d2)+
