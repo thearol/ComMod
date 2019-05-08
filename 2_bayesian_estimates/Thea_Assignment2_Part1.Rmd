@@ -4,6 +4,7 @@ author: "Riccardo Fusaroli"
 output:
   word_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -41,9 +42,9 @@ d <- data.frame(
 
 
 # define grid
-grid <- seq( from=0 , to=1 , length.out=100)
+grid <- seq( from=0 , to=1 , length.out=1000)
 # define prior
-uni_prior <- rep( 1 , 100)
+uni_prior <- rep( 1 , 1000)
 alt_prior <- ifelse(grid < 0.5 , 0 , 1 )
 # compute likelihood at each value in grid
 likelihood <- dbinom( 3 , size=6 , prob=grid )
@@ -55,7 +56,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 ric_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Riccardo: 100 points")
+mtext("Riccardo, uniform prior")
 
 
 
@@ -83,7 +84,7 @@ The propbability of Riccardo knowing more than chance depends on the prior. If i
 #plot
 ric_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Riccardo: 100 points")
+mtext("Riccardo, uniform prior")
 
 ```
 
@@ -121,6 +122,7 @@ n <- 6
 curve( dbeta( x , w+1 , n-w+1 ) , from=0 , to=1 )
 # quadratic approximation
 curve( dnorm( x , 0.5 , 0.2 ) , lty=2 , add=TRUE )
+mtext("Quadratic approximation: prior with assumption of knowledge > 0.5")
 ```
 
 N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
@@ -138,7 +140,7 @@ From now on we will use the following prior that assumes the teachers will perfo
 #plot of prior
 
 Data=data.frame(grid=grid,posterior=posterior,prior=alt_prior,likelihood=likelihood)
-ggplot(Data,aes(grid,posterior)) + geom_line(aes(grid,alt_prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of prior")
+ggplot(Data,aes(grid,posterior)) + geom_line(aes(grid,alt_prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Prior with assumption of knowledge > 0.5")
 
 
 ```
@@ -159,7 +161,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 tylle_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Tylle: 100 points")
+mtext("Tylle, prior with assumption of knowledge > 0.5")
 
 #Josh
 # compute likelihood at each value in grid
@@ -172,7 +174,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 josh_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Josh: 100 points")
+mtext("Josh, prior with assumption of knowledge > 0.5")
 
 #Mikkel
 # compute likelihood at each value in grid
@@ -185,7 +187,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 mikkel_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Mikkel: 100 points")
+mtext("Mikkel, prior with assumption of knowledge > 0.5")
 
 #Riccardo
 # compute likelihood at each value in grid
@@ -198,7 +200,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 riccardo_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Riccardo: 100 points")
+mtext("Riccardo, prior with assumption of knowledge > 0.5")
 
 
 ```
@@ -206,7 +208,7 @@ mtext("Riccardo: 100 points")
 In percentages Riccardo and Mikkel answer roughly equally bad. However, since we have many more datapoints from Mikkel, as the posterior distribution shows, we can be much more certain in assessing Mikkel's CogSci knowledge. This is shown in the area under the curve being more narrow compared to Riccardo's.
 
 #Who's best?
-Assessing the posterior distribution, we are quite certrain that Josh's knowledge lays around 0.8, which is somewhat impressive. However, looking at Tylle's curve we are very uncertain - it could be 0.5, but also 1 (awesome).
+Assessing the posterior distribution, we are quite certrain that Josh's knowledge lays around 0.8, which is somewhat impressive. However, looking at Tylle's curve we are very uncertain - it could be 0.5, but also 1 (awesome). This is due to the fact that we have sucj few datapoints from Tylle, resulting in high uncertainty. 
 
 
 
@@ -219,7 +221,7 @@ new_prior <- dnorm(grid,0.8,0.2)
 #plot of new prior
 
 new_Data=data.frame(grid=grid,posterior=posterior,prior=new_prior,likelihood=likelihood)
-ggplot(new_Data,aes(grid,posterior)) + geom_line(aes(grid,prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of new prior")
+ggplot(new_Data,aes(grid,posterior)) + geom_line(aes(grid,prior),color='red')+ xlab("Knowledge of CogSci")+ ylab("posterior probability") + labs(title = "Plot of new normal prior (0.8,0.2)")
 
 ```
 
@@ -240,7 +242,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 tylle_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Tylle: 100 points")
+mtext("Tylle, new normal prior (0.8,0.2)")
 
 #Josh
 # compute likelihood at each value in grid
@@ -253,7 +255,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 josh_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Josh: 100 points")
+mtext("Josh, new normal prior (0.8,0.2)")
 
 #Mikkel
 # compute likelihood at each value in grid
@@ -266,7 +268,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 mikkel_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Mikkel: 100 points")
+mtext("Mikkel, new normal prior (0.8,0.2)")
 
 #riccardo
 # compute likelihood at each value in grid
@@ -279,7 +281,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 ric_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Riccardo: 100 points")
+mtext("Riccardo, new normal prior (0.8,0.2)")
 
 
 
@@ -305,7 +307,7 @@ new_d
 ```{r, include=FALSE}
 #different priors
 
-uni_prior <- rep( 1 , 100)
+uni_prior <- rep( 1 , 1000)
 norm_prior <- dnorm(grid,0.8,0.2)
 
 ```
@@ -327,7 +329,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 tylle_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Tylle: 100 points")
+mtext("Tylle with more data, uniform prior")
 
 #Josh
 # compute likelihood at each value in grid
@@ -340,7 +342,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 josh_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Josh: 100 points")
+mtext("Josh with more data, uniform prior")
 
 #Mikkel
 # compute likelihood at each value in grid
@@ -353,7 +355,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 mikkel_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Mikkel: 100 points")
+mtext("Mikkel with more data, uniform prior")
 
 #riccardo
 # compute likelihood at each value in grid
@@ -366,7 +368,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 ric_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Riccardo: 100 points")
+mtext("Riccardo with more data, uniform prior")
 
 
 ```
@@ -389,7 +391,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 tylle_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Tylle: 100 points")
+mtext("Tylle with more data, new normal prior (0.8,0.2)")
 
 #Josh
 # compute likelihood at each value in grid
@@ -402,7 +404,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 josh_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Josh: 100 points")
+mtext("Josh with more data, new normal prior (0.8,0.2)")
 
 #Mikkel
 # compute likelihood at each value in grid
@@ -415,7 +417,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 mikkel_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Mikkel: 100 points")
+mtext("Mikkel with more data, new normal prior (0.8,0.2)")
 
 #riccardo
 # compute likelihood at each value in grid
@@ -428,7 +430,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 ric_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("New Riccardo: 100 points")
+mtext("Riccardo with more data, new normal prior (0.8,0.2)")
 
 ```
 
@@ -459,7 +461,7 @@ posterior <- unstd.posterior / sum(unstd.posterior)
 #plot
 tylle_plot <- plot( grid , posterior , type="b" ,
     xlab="probability of correct" , ylab="posterior probability" )
-mtext("Tylle: 100 points")
+mtext("Tylle is stupid, sceptic prior")
 
 
 
