@@ -55,7 +55,8 @@ Step 2: Prepare the pitch SD data from last year
 ```{2. }
 pData<-read_xlsx('Assignment4PitchDatav2.xlsx')
 
-pData$PitchSD<-log(pData$PitchSD)
+# Log transforming likely a good idea
+#pData$PitchSD<-log(pData$PitchSD)
 pData$PitchSDZ<-scale(pData$PitchSD)
 pData$diagnosis<-as.factor(pData$diagnosis)
 ```
@@ -75,7 +76,7 @@ get_prior(model,pData)
 prior <- c(prior(normal( 0, 1 ), class='Intercept'), 
            prior(normal( 0 , 1 ), class='b',  coef='diagnosis1'),
            prior(normal( 0 , 1 ), class='sd',  coef='Intercept', group = "ID"),
-           prior(normal( 1 , 1 ), class='sigma'))
+           prior(normal( 0 , 1 ), class='sigma'))
 
 post_verb <- brm(model, pData, prior = prior, sample_prior = T)
 
@@ -97,7 +98,7 @@ get_prior(model,pData)
 prior <- c(prior(normal( 0, 1 ), class='Intercept'), 
            prior(normal( -0.59, 0.33  ), class='b',  coef='diagnosis1'),
            prior(normal( 0 , 1 ), class='sd',  coef='Intercept', group = "ID"), 
-           prior(normal( 1 , 1 ), class='sigma'))
+           prior(normal( 0 , 1 ), class='sigma'))
 
 post_verb2 <- brm(model, pData, prior = prior, sample_prior = T)
 
@@ -152,31 +153,7 @@ ggplot(d2, aes(x=diagnosis, y=PitchSDZ)) +
   xlab('Diagnosis')+
   scale_x_discrete(breaks=c("0","1"),labels=c("Neurotypical", "Schizophrenic"))
 
-ggplot(pData, aes(x=diagnosis, y=PitchSDZ)) + 
-  geom_violin()
-  #geom_violin(data=d2)+
-  #geom_jitter(shape=16, position=position_dodge(0.2))
 
-?cbind
-pData$mu<-pData$PitchSDZ
-?geom_bar()
-
-ggplot(d, aes(x=diagnosis, y=mu)) + 
-  geom_violin()
-p
-
-ggplot(aes(x = diagnosis, y = mu), data=d) +
-  geom_bar()+
-#geom_errorbar(aes(ymin = Q1.5,  ymax = Q98.5), alpha = 1/3, width = .3) +
-#geom_ribbon(aes(ymin = Q5.5,  ymax = Q94.5), fill = "orange2", alpha = 1/3) +
-#geom_ribbon(aes(ymin = Q16.5, ymax = Q83.5), fill = "orange2", alpha = 1/3) +
-#geom_line(color = "orange4") +
-ggtitle("Posterior ") +
-#coord_cartesian(ylim = range(-1:3)) +
-theme(plot.title = element_text(size = 12, hjust = .5))# +
-geom_point(data = pData) #+ 
-  #scale_x_continuous(breaks=seq(from = 0, to = 1, by = 1))
-  
 
 ###
 
@@ -188,32 +165,7 @@ multiplot <- function(x) {
   geom_pointrange(position = position_dodge(width = 0.3)) + coord_flip()
 }
 
-multiplot(list(post_verb1,post_verb2))
-
-###
-
-install.packages('tidybayes')
-
-library(modelr)
-library(tidybayes)
-?data_grid
-
-grid = pData %>%
-  data_grid(diagnosis)
-
-fits = grid %>%
-  add_fitted_draws(post_verb2)
-
-preds = grid %>%
-  add_predicted_draws(post_verb2)
-
-AB %>%
-  ggplot(aes(x = response, y = group)) +
-  geom_halfeyeh(aes(x = .value), relative_scale = 0.7, position = position_nudge(y = 0.1), data = fits) +
-  stat_intervalh(aes(x = .prediction), data = preds) +
-  geom_point(data = AB) +
-  scale_color_brewer()
-
+multiplot(list(post_verb,post_verb2))
 ```
 Step 6: Prepare a nice write up of the analysis and answer the questions at the top.
 

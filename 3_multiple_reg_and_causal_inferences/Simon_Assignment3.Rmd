@@ -28,7 +28,7 @@ library(rstan)
 library(tidyverse)
 library(rethinking)
 library(brms)
-setwd('C:/Users/slmoni/Documents/Uni/Eye tracking/ComMod/3_multiple_reg_and_causal_inferences')
+setwd('C:/Users/slmoni/Documents/Uni/Stats/ComMod/3_multiple_reg_and_causal_inferences')
 asd<-read.csv('Assignment3Data.csv')
 
 # why scaling? To avoid correlation between a and b, as well as making comperision
@@ -66,7 +66,7 @@ asd2$Estimate<- asd2$ADOS
 ## VerbalIQ model
 verb <- bf(ADOS ~ 1 + VerbalIQ.s)
 
-prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -5 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( 0 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
 post_verb <- brm(verb, asd1, prior = prior, sample_prior = T)
 
 prior_verb <- brm(verb, asd1, prior = prior, sample_prior = 'only')
@@ -137,7 +137,7 @@ fitted(post_verb) %>%
 ## NonVerbalIQ model 
 nonverb <- bf(ADOS ~ 1 + NonVerbalIQ.s)
 
-prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -5 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( 0 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
 post_nonverb <- brm(nonverb, asd1, prior = prior, sample_prior = T)
 
 pp_check(post_nonverb)
@@ -205,7 +205,7 @@ fitted(post_nonverb) %>%
 ## SocialIQ model 
 social <- bf(ADOS ~ 1 + SocialIQ.s)
 
-prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( -5 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
+prior <- c(prior(normal( 12 , 5 ), class='Intercept'), prior(normal( 0 , 5 ), class='b'), prior(normal( 0 , 5 ), class='sigma'))
 post_social <- brm(social, asd1, prior = prior, sample_prior = T)
 
 pp_check(post_social)
