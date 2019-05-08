@@ -28,7 +28,9 @@ This is the data:
 Questions:
 
 1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
+
 - First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
+
 - Then implement a quadratic approximation (hint check paragraph 2.4.2!).
 - N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
 
@@ -45,7 +47,7 @@ Questions:
 6. Optional question: Can you estimate the difference between Riccardo's estimated knowledge and that of each of the other teachers? Would you deem it credible (that is, would you believe that it is actually different)?
 
 7. Bonus knowledge: all the stuff we have done can be implemented in a lme4-like fashion using the brms package. Here is an example.
-```{r}
+```{r, include=FALSE}
 library(brms)
 d <- data.frame(
   Correct=c(3,2,160,66),
@@ -63,6 +65,491 @@ plot(SkepticalModel)
 If you dare, try to tweak the data and model to test two hypotheses:
 - Is Kristian different from Josh?
 - Is Josh different from chance?
+
+QUESTION 1
+
+1. What's Riccardo's estimated knowledge of CogSci? What is the probability he knows more than chance (0.5) [try figuring this out. if you can't peek into chapters 3.1 and 3.2 and/or the slides]?
+
+- First implement a grid approximation (hint check paragraph 2.4.1!) with a uniform prior, calculate the posterior and plot the results
+
+- Then implement a quadratic approximation (hint check paragraph 2.4.2!).
+- N.B. for the rest of the exercise just keep using the grid approximation (we'll move to quadratic approximations in two classes)
+
+```{r, include= FALSE}
+#create dataframe 
+d <- data.frame(
+  Correct=c(3,2,160,66),
+  Questions=c(6,2,198,132),
+  Teacher=c("RF","KT","JS","MW"))
+```
+
+
+```{r, include=TRUE}
+#define grid
+p_grid <- seq(from = 0, to = 1, length.out = 100)
+
+#define uniform prior
+prior <- rep(1,100)
+
+#compute likelyhood at each value in grid
+likelyhood <- dbinom(3, size = 6, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior <- likelyhood * prior
+
+#standardize the posterior, so it sums to 1
+posterior <- unstd.posterior / sum(unstd.posterior)
+
+
+#plot the grid
+plot(p_grid, posterior, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("100 points - uniform prior")
+
+
+
+```
+```{r}
+#sample from the posterior distribution 
+samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
+
+#the probability that riccardo knows more than chance 
+sum( samples > 0.5 ) / length (samples)
+
+
+dens(samples)
+```
+
+
+```{r, include=FALSE}
+
+#try to change the grid so that it's not "allowed" to perform below chance
+
+#define grid
+p_grid <- seq(from = 0, to = 1, length.out = 100)
+
+#define uniform prior
+prior_1 <- ifelse(p_grid < 0.5, 0, 1)
+
+#compute likelyhood at each value in grid
+likelyhood_r <- dbinom(3, size = 6, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_r <- likelyhood_r * prior_1
+
+#standardize the posterior, so it sums to 1
+posterior_r <- unstd.posterior_r / sum(unstd.posterior_r)
+
+
+#plot the grid
+Riccardo_plot <- plot(p_grid, posterior_r, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("100 points - Prior that does not allow for knowledge below 0.5")
+
+
+```
+
+
+```{r, include = FALSE}
+#sample from the posterior distribution 
+samples <- sample( p_grid , prob=posterior_r , size=1e4 , replace=TRUE )
+
+#the probability that riccardo knows more than chance 
+sum( samples > 0.5 ) / length (samples)
+
+dens(samples)
+```
+
+You always look at the area below the curve. 
+
+It depends on the prior, if we have a uniform prior the chance that he performs above chance is 50 %. 
+
+If we have a prior which assigns 0 to grid-values below 0.5 and 1 to grid-values above 0.5, then there is a 100% chance that he performs above chance. 
+
+```{r, echo = TRUE}
+library(rethinking)
+
+
+globe.qa <- map(
+  alist(
+    w ~ dbinom(6,p), #binomial likelyhood
+    p ~ dunif (0,1) #uniform prior
+  ),
+  data = list(w = 3)
+)
+
+precis(globe.qa)
+
+
+w <- 3
+n <- 6
+curve(dbeta(x, w + 1, n-w+1), from = 0, to = 1) 
+curve(dnorm(x,0.5, 0.2), lty= 2, add = TRUE)
+
+precis(globe.qa)
+```
+
+Mean StdDev 5.5% 94.5%
+p  0.5    0.2 0.17  0.83
+
+Assuming that the posterior is Gaussian distributed, it is maximized at 0.5 and its standard deviation is 0.2. 
+
+
+QUESTION 2
+
+2. Estimate all the teachers' knowledge of CogSci. Who's best? Use grid approximation. Comment on the posteriors of Riccardo and Mikkel.
+
+2a. Produce plots of the prior, and posterior for each teacher.
+
+From now on we will use the prior which assumes that the teachers will perform better than chance (which would basically be the same as having xero cogsci knowledge)
+
+```{r}
+#plot of prior
+
+data = data.frame(grid = p_grid, posterior=posterior,prior=prior_1,likelyhood=likelyhood)
+
+ggplot(data, aes(grid, posterior)) + 
+  #geom_point() + geom_line() + theme_classic() + 
+  geom_line(aes(grid, prior), color = 'red') + 
+  xlab("Knowledge of CogSci") + ylab("posterior probability") + labs(title = "Plot of prior")
+
+```
+
+
+
+```{r}
+#TYLLE
+
+#compute likelyhood at each value in grid
+likelyhood_t <- dbinom(2, size = 2, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_t <- likelyhood_t * prior_1
+
+#standardize the posterior, so it sums to 1
+posterior_t <- unstd.posterior_t / sum(unstd.posterior_t)
+
+
+#plot the grid
+tylle_plot <- plot(p_grid, posterior_t, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Tylle plot - 100 points")
+
+
+#MIKKEL
+
+#compute likelyhood at each value in grid
+likelyhood_m <- dbinom(66, size = 132, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_m <- likelyhood_m * prior_1
+
+#standardize the posterior, so it sums to 1
+posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
+
+
+#plot the grid
+mikkel_plot <- plot(p_grid, posterior_m, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Mikkel plot - 100 points")
+
+
+#Josh
+
+#compute likelyhood at each value in grid
+likelyhood_j <- dbinom(160, size = 198, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_j <- likelyhood_j * prior_1
+
+#standardize the posterior, so it sums to 1
+posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
+
+
+#plot the grid
+josh_plot <- plot(p_grid, posterior_j, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Josh plot - 100 points")
+
+
+```
+
+The posterior distribution of probabilities for Riccardo and Mikkel shows that for both of them, the peak lies around 0.5 (probability of correct). But we can be more certain about Mikkels estimated cogsci knowledge compared to Riccardos as the area under the curve is larger for Riccardo compared to Mikkel.  
+
+From looking at the posterior distributions of the teachers, the one who performs the best is either Josh or Tylen. But we are much more certain about the knowledge of Josh compared to Tylen.  
+
+QUESTION 3
+
+3. Change the prior. Given your teachers have all CogSci jobs, you should start with a higher appreciation of their knowledge: the prior is a normal distribution with a mean of 0.8 and a standard deviation of 0.2. Do the results change (and if so how)?
+3a. Produce plots of the prior and posterior for each teacher.
+
+```{r}
+prior_2 <-dnorm(p_grid,0.8,0.2) # CenteredAtChance
+
+data = data.frame(grid = p_grid, posterior=posterior,prior=prior_2,likelyhood=likelyhood)
+
+ggplot(data, aes(grid, posterior)) + 
+  #geom_point() + geom_line() + theme_classic() + 
+  geom_line(aes(grid, prior), color = 'red') + 
+  xlab("Knowledge of CogSci") + ylab("posterior probability") + labs(title = "Plot of new prior")
+```
+
+```{r}
+#TYLLE
+
+#compute likelyhood at each value in grid
+likelyhood_t <- dbinom(2, size = 2, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_t <- likelyhood_t * prior_2
+
+#standardize the posterior, so it sums to 1
+posterior_t <- unstd.posterior_t / sum(unstd.posterior_t)
+
+
+#plot the grid
+tylle_plot_2 <- plot(p_grid, posterior_t, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Tylle plot - 100 points")
+
+
+#MIKKEL
+
+#compute likelyhood at each value in grid
+likelyhood_m <- dbinom(66, size = 132, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_m <- likelyhood_m * prior_2
+
+#standardize the posterior, so it sums to 1
+posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
+
+
+#plot the grid
+mikkel_plot_2 <- plot(p_grid, posterior_m, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Mikkel plot - 100 points")
+
+
+#Josh
+
+#compute likelyhood at each value in grid
+likelyhood_j <- dbinom(160, size = 198, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_j <- likelyhood_j * prior_2
+
+#standardize the posterior, so it sums to 1
+posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
+
+
+#plot the grid
+josh_plot_2 <- plot(p_grid, posterior_j, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Josh plot - 100 points")
+
+
+#Riccardo
+
+#compute likelyhood at each value in grid
+likelyhood_r <- dbinom(3, size = 6, prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_r <- likelyhood_r * prior_2
+
+#standardize the posterior, so it sums to 1
+posterior_r <- unstd.posterior_r / sum(unstd.posterior_r)
+
+
+#plot the grid
+Riccardo_plot_2 <- plot(p_grid, posterior_r, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Riccardo plot 100 points")
+```
+
+The prior affects the posterior distribution mostly when we have few datapoint, therefore it makes a difference when we change the prior for Tylen and Riccardo (few datapoints), but not so much for Josh and Mikkel (many datapoints). 
+
+
+
+QUESTION 4
+
+4. You go back to your teachers and collect more data (multiply the previous numbers by 100). Calculate their knowledge with both a uniform prior and a normal prior with a mean of 0.8 and a standard deviation of 0.2. Do you still see a difference between the results? Why?
+
+
+```{r}
+new_d <- d*100
+
+new_d$Teacher <- d$Teacher  
+
+
+uni_prior <- rep(1,100)
+
+normal_prior <- dnorm(p_grid,0.8,0.2)
+
+
+```
+
+UNIFORM PRIOR
+
+```{r}
+#RICCARDO
+
+#compute likelyhood at each value in grid
+likelyhood_r <- dbinom(new_d[1,1], size = new_d[1,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_r <- likelyhood_r * uni_prior
+
+#standardize the posterior, so it sums to 1
+posterior_r <- unstd.posterior_r / sum(unstd.posterior_r)
+
+
+#plot the grid
+Riccardo_plot <- plot(p_grid, posterior_r, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Riccardo plot - 100 points - uniform prior")
+
+
+#TYLLE
+
+#compute likelyhood at each value in grid
+likelyhood_t <- dbinom(new_d[2,1], size = new_d[2,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_t <- likelyhood_t * uni_prior
+
+#standardize the posterior, so it sums to 1
+posterior_t <- unstd.posterior_t / sum(unstd.posterior_t)
+
+
+#plot the grid
+tylle_plot <- plot(p_grid, posterior_t, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Tylle plot - 100 points - uniform prior")
+
+
+#MIKKEL
+
+#compute likelyhood at each value in grid
+likelyhood_m <- dbinom(new_d[4,1], size = new_d[4,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_m <- likelyhood_m * uni_prior
+
+#standardize the posterior, so it sums to 1
+posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
+
+
+#plot the grid
+mikkel_plot <- plot(p_grid, posterior_m, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Mikkel plot - 100 points  - uniform prior")
+
+
+#Josh
+
+#compute likelyhood at each value in grid
+likelyhood_j <- dbinom(new_d[3,1], size = new_d[3,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_j <- likelyhood_j * uni_prior
+
+#standardize the posterior, so it sums to 1
+posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
+
+
+#plot the grid
+josh_plot <- plot(p_grid, posterior_j, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Josh plot - 100 points - uniform prior")
+
+```
+
+NORMAL PRIOR
+
+```{r}
+#RICCARDO
+
+#compute likelyhood at each value in grid
+likelyhood_r <- dbinom(new_d[1,1], size = new_d[1,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_r <- likelyhood_r * normal_prior
+
+#standardize the posterior, so it sums to 1
+posterior_r <- unstd.posterior_r / sum(unstd.posterior_r)
+
+
+#plot the grid
+Riccardo_plot <- plot(p_grid, posterior_r, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Riccardo plot - 100 points - normal prior")
+
+
+#TYLLE
+
+#compute likelyhood at each value in grid
+likelyhood_t <- dbinom(new_d[2,1], size = new_d[2,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_t <- likelyhood_t * normal_prior
+
+#standardize the posterior, so it sums to 1
+posterior_t <- unstd.posterior_t / sum(unstd.posterior_t)
+
+
+#plot the grid
+tylle_plot <- plot(p_grid, posterior_t, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Tylle plot - 100 points - normal prior")
+
+
+#MIKKEL
+
+#compute likelyhood at each value in grid
+likelyhood_m <- dbinom(new_d[4,1], size = new_d[4,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_m <- likelyhood_m * normal_prior
+
+#standardize the posterior, so it sums to 1
+posterior_m <- unstd.posterior_m / sum(unstd.posterior_m)
+
+
+#plot the grid
+mikkel_plot <- plot(p_grid, posterior_m, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Mikkel plot - 100 points  - normal prior")
+
+
+#Josh
+
+#compute likelyhood at each value in grid
+likelyhood_j <- dbinom(new_d[3,1], size = new_d[3,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_j <- likelyhood_j * normal_prior
+
+#standardize the posterior, so it sums to 1
+posterior_j <- unstd.posterior_j / sum(unstd.posterior_j)
+
+
+#plot the grid
+josh_plot <- plot(p_grid, posterior_j, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Josh plot - 100 points - normal prior")
+```
+
+No difference because of many datapoints. 
+
+5. Imagine you're a skeptic and think your teachers do not know anything about CogSci, given the content of their classes. How would you operationalize that belief?
+
+
+
+We would assume that if they do not know anything, they perform around chance. Therefore we can create a prior with a mean of 0.5 and a sd of 10. 
+
+```{r}
+zero_knowledge_prior <- dnorm(p_grid, 0.5, 0.1)
+
+#TYLLE with few datapoints 
+
+#compute likelyhood at each value in grid
+likelyhood_t <- dbinom(d[2,1], size = d[2,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_t <- likelyhood_t * zero_knowledge_prior
+
+#standardize the posterior, so it sums to 1
+posterior_t <- unstd.posterior_t / sum(unstd.posterior_t)
+
+
+#plot the grid
+tylle_plot <- plot(p_grid, posterior_t, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Tylle plot - 100 points - zero knowledge prior")
+
+
+```
+```{r}
+#TYLLE with many datapoints 
+
+#compute likelyhood at each value in grid
+likelyhood_t <- dbinom(new_d[2,1], size = new_d[2,2], prob = p_grid)
+
+#compute product of likelyhood and prior
+unstd.posterior_t <- likelyhood_t * zero_knowledge_prior
+
+#standardize the posterior, so it sums to 1
+posterior_t <- unstd.posterior_t / sum(unstd.posterior_t)
+
+
+#plot the grid
+tylle_plot <- plot(p_grid, posterior_t, type = "b", xlab = "probability of correct", ylab = "posterior probability") + mtext("Tylle plot - 100 points - zero knowledge prior")
+```
 
 
 

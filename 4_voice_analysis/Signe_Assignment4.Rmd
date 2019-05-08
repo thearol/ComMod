@@ -66,8 +66,6 @@ brm_out
 
 The mean effect size of the meta analysis is -0.60 and a standard error of 0.31. 
 
-
-
 Step 2: Prepare the pitch SD data from last year
 - the data is available as Assignment4PitchData.csv (thanks Celine)
 - Also, let's standardize the data, so that they are compatible with our meta-analytic prior (Cohen's d is measured in SDs).
@@ -122,7 +120,7 @@ summary(model_1.2)
 # Draw the consequences of priors 
 m_con_prior <- brm(model_1, data, prior = prior_con, sample_prior = "only")
 # Prior Predictive Check
-pp_check(m_con_prior)
+pp_check(m_con_prior, nsamples = 50)
 ```
 
 
@@ -165,7 +163,7 @@ model_1.3 <- brm(model_1,
                )
 
 
-model_1.3
+summary(model_1.3)
 
 #assess smapling problem 
 pairs(model_1.3)
