@@ -1,0 +1,20 @@
+---
+title: "MotionData"
+author: "Signe Kløve Kjær"
+date: "28/3/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("/Users/signeklovekjaer/Documents/CognitiveScience/4.semester/Perception_and_action/Motion-data")
+
+
+d_motion <- read.delim("18_11.txt", sep = ",")
+
+names(d_motion) <- c("sample", "condition", "pos_x", "pos_y")
+```
+
