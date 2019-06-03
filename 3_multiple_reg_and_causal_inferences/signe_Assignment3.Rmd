@@ -81,14 +81,12 @@ get_prior(m_verbal, data = asd_2, family = gaussian)
 
 # Define the prior
 #intecept is the ados you have if you are average in verbal iq
-prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(-5,5), class = "b") , prior(normal(0,5), class = "sigma"))
+prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(0,5), class = "b") , prior(normal(0,5), class = "sigma"))
 
 # Draw the consequences of priors 
 m_verbal_prior <- brm(m_verbal, asd_2, prior = prior, sample_prior = "only")
 # Prior Predictive Check
-pp_check(m_verbal_prior)
-labels()
-# Repeat until you are satisfied
+pp_check(m_verbal_prior, nsamples = 50)
 
 ```
 
@@ -103,7 +101,7 @@ m1.1 <- rethinking::map(
         ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*VerbalIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( -5 , 5 ) ,
+        b ~ dnorm( 0 , 5 ) ,
         sigma ~ dunif( 0 , 5 ) ),
 data = asd_2 )
 
@@ -156,7 +154,7 @@ m1.2 <- rethinking::map(
         ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*NonVerbalIQ_c ,
         a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( -5 , 5 ) ,
+        b ~ dnorm( 0 , 5 ) ,
         sigma ~ dnorm( 0 , 5 )
 ), data = asd_2 )
 
@@ -206,8 +204,8 @@ m1.3 <- rethinking::map(
     alist(
         ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*SocialIQ_c ,
-        a ~ dnorm( 12 , 5 ) ,
-        b ~ dnorm( -5 , 5 ) ,
+        a ~ dnorm( 12, 5 ) ,
+        b ~ dnorm( 0 , 5 ) ,
 sigma ~ dunif( 0 , 5 ) ),
 data = asd_2)
 
@@ -263,22 +261,17 @@ We tried with different values for mean alpha and mean beta.
 
 ```{r}
 
-#define the model
-flist_prior_check_1.1 <- alist(
-  ADOS ~ dnorm( mu , sigma ) ,
+m.check <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + b*SocialIQ_c ,
-        a ~ dnorm( 5 , 5 ) ,
-        b ~ dnorm(-20, 5 ) ,
-        sigma ~ dnorm( 0 , 5 )
-)
-
-
-#fit the model to the data
-check_1.1 <- map(flist_prior_check_1.1, data = asd_2)
-
+        a ~ dnorm( 12 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
+sigma ~ dunif( 0 , 5 ) ),
+data = asd_2)
 
 #look at the fit maximum of the model
-precis(check_1.1)
+precis(m.check)
 
 
 ```
@@ -295,22 +288,51 @@ It could make sense if they do not correlate too much. Use chapter 5 about multi
 
 The first thing we will do is to check whether the IQ measures correlate.
 
-
+DAGG!!!!!
 ```{r}
-#Define the model
-m1.4.2 <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
+library(dagitty)
+dag_3 <- dagitty('dag {
 
+    ASD_diagnosis [pos="4,2.5"]
+    Question_1 [pos="1,1"]
+    Question_2 [pos="1,2"]
+    Question_3 [pos="1,3"]
+    Question_4 [pos="1,4"]
+    Verbal_IQ [pos="2,1"]
+    NonVerbal_IQ [pos="2,2"]
+    Social_IQ [pos="2,3"]
+    ADOS [pos="2,4"]
+    Selection_bias [pos="5,3"]
+    Real_Autism [pos="0,2.5"]
 
-# Define the prior
-#intecept is the ados you have if you are average in verbal iq
-prior = c(prior(normal(12,5), class = "Intercept"), prior(normal(0,5), class = "b"), prior(normal(0,5), class = "sigma"))
+    Real_Autism -> Question_1 
+    Verbal_IQ -> ASD_diagnosis
+    Real_Autism -> Question_2 
+    NonVerbal_IQ -> ASD_diagnosis
+    Real_Autism -> Question_3 
+    Social_IQ -> ASD_diagnosis
+    Real_Autism -> Question_4 
+    ADOS -> ASD_diagnosis
+    Selection_bias -> ASD_diagnosis
+    Question_1 -> NonVerbal_IQ
+    Question_1 -> Social_IQ
+    Question_1 -> ADOS
+    Question_2 -> Verbal_IQ
+    Question_2 -> Social_IQ
+    Question_2 -> ADOS
+    Question_3 -> Verbal_IQ
+    Question_3 -> NonVerbal_IQ
+    Question_3 -> ADOS
+    Question_4 -> Verbal_IQ
+    Question_4 -> NonVerbal_IQ
+    Question_4 -> Social_IQ
+}')
+#adjustmentSets( dag_3 , exposure="X" , outcome="Y" )
 
-# Draw the consequences of priors 
-m_1.8_prior <- brm(m1.8, asd_3, prior = prior, sample_prior = "only")
-# Prior Predictive Check
-pp_check(m_1.8_prior)
-# Repeat until you are satisfied
+plot(dag_3)
 ```
+
+
 
 
 ```{r}
@@ -551,7 +573,7 @@ asd_3 <- asd_3[ asd_3$ChildID >= 2 , ]
 library(brms)
 
 #Define the model
-m1.8 <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
+m1.8.1 <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
 
 
 # Define the prior
@@ -559,7 +581,7 @@ m1.8 <- bf(ADOS ~ 1 + VerbalIQ_c + NonVerbalIQ_c + SocialIQ_c)
 prior = c(prior(normal(6,5), class = "Intercept"), prior(normal(0,5), class = "b"), prior(normal(0,5), class = "sigma"))
 
 # Draw the consequences of priors 
-m_1.8_prior <- brm(m1.8, asd_3, prior = prior, sample_prior = "only")
+m_1.8.1_prior <- brm(m1.8.1, asd_3, prior = prior, sample_prior = "only")
 # Prior Predictive Check
 pp_check(m_1.8_prior)
 # Repeat until you are satisfied
@@ -567,7 +589,7 @@ pp_check(m_1.8_prior)
 ```
 
 ```{r}
-m_full_1 <- rethinking::map(
+m1.8 <- rethinking::map(
     alist(
         ADOS ~ dnorm( mu , sigma ) ,
         mu <- a + bv*VerbalIQ_c + bn*NonVerbalIQ_c + bs*SocialIQ_c ,
@@ -579,10 +601,224 @@ m_full_1 <- rethinking::map(
 ), data=asd_3)
 
 
-precis(m_full_1)
+precis(m1.8)
 ```
 
-The beta values for nonverbal and verbal crosses zero. The social iq looks more reliable as the confidence intervals are on the same side of zero and is not too far spread out. 
+Looks weird --> lets make a model just for td 
+
+```{r}
+#TD
+
+#only use children with TD
+asd_3_td <- asd_3[ asd_3$ASD <= 0 , ]
+
+m1.9 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + bv*VerbalIQ_c + bn*NonVerbalIQ_c + bs*SocialIQ_c ,
+        a ~ dnorm( 6 , 5 ),
+        bn ~ dnorm( 0 , 5 ),
+        bs ~ dnorm( 0 , 5 ), 
+        bv ~ dnorm( 0 , 5 ),
+        sigma ~ dnorm( 0 , 5 )
+), data=asd_3_td)
+
+
+precis(m1.9)
+```
+
+
+All seem to have a slope around 0. To illustarte this we will make 3 plots, one for each IQ predictor, where we plot TD together with ASD but with separate models. 
+
+#VERBAL
+```{r}
+
+
+m1.10 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + b*VerbalIQ_c ,
+        a ~ dnorm( 12 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
+        sigma ~ dunif( 0 , 5 ) ),
+data = asd_3_td )
+
+precis(m1.10)
+
+
+```
+
+
+```{r}
+#plot model of verbal_iq
+
+# define sequence of verbaliq to compute predictions for
+# these values will be on the horizontal axis
+verbal.seq <- seq( from=-3 , to=3 , by=1 )
+
+#summarise distribution of mu
+
+mu <- link (m1.1, data = data.frame(VerbalIQ_c = verbal.seq))
+mu_td <- link(m1.10, data = data.frame(VerbalIQ_c = verbal.seq))
+
+
+# summarize the distribution of mu
+mu.mean <- apply( mu , 2 , mean )
+mu.mean_td <- apply( mu_td , 2 , mean )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 )
+mu.HPDI_td <- apply( mu_td , 2 , HPDI , prob=0.89 )
+
+#simulate ADOS
+sim.ADOS <- sim(m1.1, data = list(VerbalIQ_c = verbal.seq))
+sim.ADOS_td <- sim(m1.10, data = list(VerbalIQ_c = verbal.seq))
+ADOS.PI <- apply(sim.ADOS, 2, PI, prob = 0.89)
+ADOS.PI_td <- apply(sim.ADOS_td, 2, PI, prob = 0.89)
+
+# plot raw data
+plot( ADOS ~ VerbalIQ_c , asd_2 , col="blue" , xlim=c(-2, 2), ylim=c(0, 25)) 
+lines( verbal.seq , mu.mean, col="blue" )
+shade( mu.HPDI , verbal.seq )
+shade( ADOS.PI , verbal.seq )
+
+par(new=TRUE)
+plot( ADOS ~ VerbalIQ_c , asd_3_td , col="pink", xlim=c(-2, 2), ylim=c(0, 25))
+# # draw MAP line
+lines(verbal.seq, mu.mean_td, col="pink")
+# draw HPDI region for line
+shade( mu.HPDI_td , verbal.seq )
+# draw PI region for simulated heights
+
+shade( ADOS.PI_td , verbal.seq )
+```
+
+
+#NONVERBAL
+```{r}
+
+
+m1.11 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + b*NonVerbalIQ_c ,
+        a ~ dnorm( 12 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
+        sigma ~ dunif( 0 , 5 ) ),
+data = asd_3_td )
+
+precis(m1.11)
+
+```
+
+
+```{r}
+#plot model of verbal_iq
+
+# define sequence of verbaliq to compute predictions for
+# these values will be on the horizontal axis
+nonverbal.seq <- seq( from=-3 , to=3 , by=1 )
+
+#summarise distribution of mu
+
+mu <- link (m1.2, data = data.frame(NonVerbalIQ_c = nonverbal.seq))
+mu_td <- link(m1.11, data = data.frame(NonVerbalIQ_c = nonverbal.seq))
+
+
+# summarize the distribution of mu
+mu.mean <- apply( mu , 2 , mean )
+mu.mean_td <- apply( mu_td , 2 , mean )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 )
+mu.HPDI_td <- apply( mu_td , 2 , HPDI , prob=0.89 )
+
+#simulate ADOS
+sim.ADOS <- sim(m1.2, data = list(NonVerbalIQ_c = nonverbal.seq))
+sim.ADOS_td <- sim(m1.11, data = list(NonVerbalIQ_c = nonverbal.seq))
+ADOS.PI <- apply(sim.ADOS, 2, PI, prob = 0.89)
+ADOS.PI_td <- apply(sim.ADOS_td, 2, PI, prob = 0.89)
+
+# plot raw data
+plot( ADOS ~ NonVerbalIQ_c , asd_2 , col="blue", xlim=c(-2, 2), ylim=c(0, 25))
+lines( nonverbal.seq , mu.mean, col="blue" )
+shade( mu.HPDI , nonverbal.seq )
+shade( ADOS.PI , nonverbal.seq )
+
+
+par(new=TRUE)
+plot( ADOS ~ NonVerbalIQ_c , asd_3_td , col="pink", xlim=c(-2, 2), ylim=c(0, 25) )
+# # draw MAP line
+lines(nonverbal.seq, mu.mean_td, col="pink")
+# draw HPDI region for line
+shade( mu.HPDI_td , nonverbal.seq )
+# draw PI region for simulated heights
+
+shade( ADOS.PI_td , nonverbal.seq )
+```
+
+
+
+#SOCAIL
+
+
+```{r}
+
+
+m1.12 <- rethinking::map(
+    alist(
+        ADOS ~ dnorm( mu , sigma ) ,
+        mu <- a + b*SocialIQ_c ,
+        a ~ dnorm( 12 , 5 ) ,
+        b ~ dnorm( -5 , 5 ) ,
+        sigma ~ dunif( 0 , 5 ) ),
+data = asd_3_td )
+
+precis(m1.12)
+
+```
+
+
+```{r}
+#plot model of verbal_iq
+
+# define sequence of verbaliq to compute predictions for
+# these values will be on the horizontal axis
+soc.seq <- seq( from=-3 , to=3 , by=1 )
+
+#summarise distribution of mu
+
+mu <- link (m1.3, data = data.frame(SocialIQ_c = soc.seq))
+mu_td <- link(m1.12, data = data.frame(SocialIQ_c = soc.seq))
+
+
+# summarize the distribution of mu
+mu.mean <- apply( mu , 2 , mean )
+mu.mean_td <- apply( mu_td , 2 , mean )
+mu.HPDI <- apply( mu , 2 , HPDI , prob=0.89 )
+mu.HPDI_td <- apply( mu_td , 2 , HPDI , prob=0.89 )
+
+#simulate ADOS
+sim.ADOS <- sim(m1.3, data = list(SocialIQ_c = soc.seq))
+sim.ADOS_td <- sim(m1.12, data = list(SocialIQ_c = soc.seq))
+ADOS.PI <- apply(sim.ADOS, 2, PI, prob = 0.89)
+ADOS.PI_td <- apply(sim.ADOS_td, 2, PI, prob = 0.89)
+
+# plot raw data
+plot( ADOS ~ SocialIQ_c , asd_2 , col="blue", xlim=c(-2, 2), ylim=c(0, 25) ) 
+lines( soc.seq , mu.mean, col="blue" )
+shade( mu.HPDI , soc.seq )
+shade( ADOS.PI , soc.seq )
+
+par(new=TRUE)
+plot( ADOS ~ SocialIQ_c , asd_3_td , col="pink", xlim=c(-2, 2), ylim=c(0, 25) )
+# # draw MAP line
+lines(soc.seq, mu.mean_td, col="pink")
+# draw HPDI region for line
+shade( mu.HPDI_td , soc.seq )
+# draw PI region for simulated heights
+
+shade( ADOS.PI_td , soc.seq )
+```
+
+
+
 
 Lets try and make a counterfactual plot
 
@@ -617,6 +853,25 @@ shade( R.PI , Social.seq )
 
 Social.seq
 ```
+
+
+```{r}
+
+two_slopes <- data.frame(ADOS = asd_2$ADOS,
+                        VerbalResiduals = m.resid_verbal,
+                        nonVerbalResiduals = m.resid_nonverbal,
+                        SocialResiduals = m.resid_social
+                        )
+
+v <- ggplot(two_slopes, aes(VerbalResiduals, ADOS))
+
+v +  geom_smooth(method = lm) + geom_point()
+
+
+```
+
+
+
 
 
 
