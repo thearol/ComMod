@@ -1,0 +1,123 @@
+---
+title: "Untitled"
+author: "Signe Kløve Kjær"
+date: "3/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+#read txt file 
+setwd("/Users/signeklovekjaer/Documents/CognitiveScience/4.semester/Computational_modeling_for_cognitive_science/ComMod/Models of perception and action")
+
+#load data
+data <- read.delim("timsigF_211_1_1_1_short.txt", sep = ",", header = FALSE)
+
+#load libraries
+library(ggplot2)
+library(dplyr)
+library(signal)
+```
+
+```{r}
+#rename column names
+names(data) <- c("sample", "time", "x", "y", "z")
+
+```
+
+```{r}
+#plot x position on the x-axis and z position on the y-axis.  
+ggplot(data = data, aes(x,z)) + geom_point() + xlab("Distance from start location to target location (x position)") + ylab("Height of movement (z position)") + labs(title = "Movement: Height as a function of distance")
+
+```
+
+```{r}
+#flip all values, so it looks like the actual movement 
+data$z <- data$z * (-1) 
+
+
+#Make a new plot of x and z
+ggplot(data = data, aes(x,z)) + geom_point() + xlab("Distance from start location to target location (x position)") + ylab("Height of movement (z position)") + labs(title = "Movement: Height as a function of distance")
+
+```
+
+```{r}
+#calculate z velocity (difference in distance / difference in time) 
+#use lag function, because we want the difference the current value and the value before
+vel <- (data$z-dplyr::lag(data$z, n=1L))/(data$time-dplyr::lag(data$time, n=1L))
+
+#add column to dataframe
+data <- cbind(data, vel)
+
+#remove na's
+data[is.na(data)] <- 0
+```
+
+
+```{r}
+#plot z velocity against time
+plot(data$time, data$vel, type="l", lwd = 2, col = "black", xlab = "Time", ylab = "Velocity")
+title("Velocity of the movement as a function of time")
+
+
+```
+
+
+```{r}
+#use butterworth filter on z velocity to make signal more clear, focus on what we are interested in
+
+#define butterworth filter
+butterworth <- butter(2, 0.2, type ='low') 
+
+#create new column using butterworth filter on velocity 
+data$velbutter <- filtfilt(butterworth,data$vel)
+
+
+#plot the filtered velocity together with the unfiltered velocity
+plot(data$time,data$vel,'l', col = "black", xlab = "Time", ylab = "Velocity")
+lines(data$time,data$velbutter,'l', col = "red")
+title(paste("Velocity of the movement as a function of time (filter cutoff ",0.2,")",sep=""))
+
+```
+
+
+```{r}
+#plot z and the filtered velocity over time
+plot(data$time, data$velbutter, type="l", lwd = 1) 
+par(new = TRUE)
+plot(data$time, data$z, type="l", lwd = 1, col = "pink")
+
+#wrong
+plot(data$time,data$z,'l', col = "black", xlab = "Time", ylab = "Velocity and z position")
+lines(data$time,data$velbutter,'l', col = "red")
+title("hh")
+
+
+```
+
+```{r}
+#Z scale velocity and z to have on similar scales in order to plot it
+data$velbutter_z <- scale(data$velbutter)
+data$z_z <- scale(data$z)
+
+#plot it 
+plot(data$time,data$z_z,'l', col = "black", xlab = "Time", ylab = "Velocity and z position")
+lines(data$time,data$velbutter_z,'l', col = "red")
+title("Z position (black color) and velocity (red color) as a function of time")
+```
+
+
+
+3.3. Describe (= text, not code) what relation z velocity has to z and how z velocity can be used
+to extract the maximal vertical extension. [5%]
+
+zerocrossing, when going from positive to negative 
+
+hvis velocity er zer0 --> maximal vertical extension 
+
+Hvor går den igennem 0?
